@@ -416,7 +416,7 @@
     "files_hint": "Up to 6 files · images teach appearance and style · videos teach motion",
     "tag_hint_1": "Uploads are auto-tagged as",
     "tag_hint_2": "Pick a role for each reference below and it is added to the prompt automatically.",
-    "role_question": "What role does {{tag}} play?",
+    "role_question": "What is {{tag}} used for?",
     "role_group": "{{tag}} role",
     "remove": "Remove {{name}}",
     "roles": {
@@ -424,9 +424,19 @@
       "background": "Background",
       "costume": "Costume",
       "prop": "Prop",
-      "pose": "Pose / Framing",
+      "pose": "Pose",
+      "composition": "Composition",
       "style": "Style",
-      "motion": "Motion"
+      "motion": "Motion",
+      "camera": "Camera work",
+      "acting": "Acting / expression",
+      "scene_flow": "Scene flow",
+      "dialogue": "Dialogue",
+      "voice": "Voice",
+      "music": "Music",
+      "sfx": "Sound FX",
+      "mood": "Mood",
+      "other": "Other"
     },
     "describe_label": "Describe your video",
     "describe_placeholder": "A woman in a red coat walks through a rainy neon street, then turns toward the camera and smiles…",
@@ -467,7 +477,9 @@
     "toast_need_prompt": "Describe the video you want to create.",
     "toast_started": "Your video is now being created.",
     "toast_ark_ok": "ARK connection checked.",
-    "toast_ark_fail": "Connection check failed."
+    "toast_ark_fail": "Connection check failed.",
+    "role_multi_hint": "You can pick more than one.",
+    "auto_directive_title": "Auto-built reference directive"
   },
   "language": {
     "label": "Language",

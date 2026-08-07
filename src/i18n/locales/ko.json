@@ -58,13 +58,34 @@
     "group_records": "기록"
   },
   "header": {
-    "projects": { "title": "프로젝트", "sub": "에피소드와 스토리보드를 정리하세요" },
-    "episodes": { "title": "스토리보드", "sub": "패널을 순서대로 배치하세요" },
-    "characters": { "title": "캐릭터 라이브러리", "sub": "생성에 사용할 캐릭터를 관리하세요" },
-    "generate": { "title": "이미지 스튜디오", "sub": "영상 생성" },
-    "history": { "title": "히스토리", "sub": "최근 결과와 옵션" },
-    "studio_hub": { "title": "스튜디오 허브", "sub": "이미지 또는 영상 생성을 선택하세요" },
-    "video": { "title": "영상 스튜디오", "sub": "AI 영상 생성" }
+    "projects": {
+      "title": "프로젝트",
+      "sub": "에피소드와 스토리보드를 정리하세요"
+    },
+    "episodes": {
+      "title": "스토리보드",
+      "sub": "패널을 순서대로 배치하세요"
+    },
+    "characters": {
+      "title": "캐릭터 라이브러리",
+      "sub": "생성에 사용할 캐릭터를 관리하세요"
+    },
+    "generate": {
+      "title": "이미지 스튜디오",
+      "sub": "영상 생성"
+    },
+    "history": {
+      "title": "히스토리",
+      "sub": "최근 결과와 옵션"
+    },
+    "studio_hub": {
+      "title": "스튜디오 허브",
+      "sub": "이미지 또는 영상 생성을 선택하세요"
+    },
+    "video": {
+      "title": "영상 스튜디오",
+      "sub": "AI 영상 생성"
+    }
   },
   "auth": {
     "checking_session": "세션 확인 중…",
@@ -345,8 +366,12 @@
     "generating_hint": "보통 30초~2분이 걸립니다. 이 페이지를 열어 두세요.",
     "result_empty": "생성된 클립이 여기에 표시됩니다.",
     "download": "MP4 다운로드",
-    "errors": { "empty_prompt": "행동을 입력하거나 모션 프리셋을 선택해 주세요." },
-    "toast": { "started": "영상 생성이 시작되었습니다." },
+    "errors": {
+      "empty_prompt": "행동을 입력하거나 모션 프리셋을 선택해 주세요."
+    },
+    "toast": {
+      "started": "영상 생성이 시작되었습니다."
+    },
     "upload_last_frame": "마지막 프레임 업로드 (선택)",
     "last_frame_hint": "마지막 프레임을 지정하면 첫 프레임에서 그쪽으로 전환됩니다.",
     "negative_label": "제외할 요소 (선택)",
@@ -396,7 +421,7 @@
     "files_hint": "최대 6개 · 이미지는 외형과 스타일, 영상은 움직임을 알려줍니다",
     "tag_hint_1": "업로드하면",
     "tag_hint_2": "형식으로 자동 태깅됩니다. 각 참고 자료의 역할을 아래에서 선택하면 프롬프트에 자동 반영됩니다.",
-    "role_question": "{{tag}}은(는) 어떤 역할인가요?",
+    "role_question": "{{tag}}은(는) 무엇에 참고하나요?",
     "role_group": "{{tag}} 역할",
     "remove": "{{name}} 제거",
     "roles": {
@@ -404,9 +429,19 @@
       "background": "배경",
       "costume": "의상",
       "prop": "소품",
-      "pose": "포즈/구도",
+      "pose": "포즈",
+      "composition": "구도",
       "style": "스타일",
-      "motion": "동작/모션"
+      "motion": "동작",
+      "camera": "카메라워크",
+      "acting": "연기/표정",
+      "scene_flow": "장면 진행",
+      "dialogue": "대사",
+      "voice": "음성",
+      "music": "음악",
+      "sfx": "효과음",
+      "mood": "분위기",
+      "other": "기타"
     },
     "describe_label": "영상 설명",
     "describe_placeholder": "예: 빨간 코트를 입은 여성이 비 내리는 네온 거리를 걷다가 카메라를 향해 돌아보며 미소 짓는다…",
@@ -447,6 +482,8 @@
     "toast_need_prompt": "만들고 싶은 영상을 설명해 주세요.",
     "toast_started": "영상 생성이 시작되었습니다.",
     "toast_ark_ok": "ARK 연결을 확인했습니다.",
-    "toast_ark_fail": "연결 확인에 실패했습니다."
+    "toast_ark_fail": "연결 확인에 실패했습니다.",
+    "role_multi_hint": "복수 선택 가능해요.",
+    "auto_directive_title": "자동 생성된 레퍼런스 지시문"
   }
 }
