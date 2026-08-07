@@ -12,13 +12,13 @@
 
 @theme inline {
   --font-sans:
-    "Plus Jakarta Sans", "Pretendard Variable", Pretendard, -apple-system,
-    BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR",
-    sans-serif;
-  --font-display:
-    "Sora", "Plus Jakarta Sans", "Pretendard Variable", Pretendard,
+    "Toss Product Sans", "Plus Jakarta Sans", "Pretendard Variable", Pretendard,
     -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
     "Noto Sans KR", sans-serif;
+  --font-display:
+    "Toss Product Sans", "Sora", "Plus Jakarta Sans", "Pretendard Variable",
+    Pretendard, -apple-system, BlinkMacSystemFont, system-ui,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 
   --radius-sm: calc(var(--radius) - 8px);
   --radius-md: calc(var(--radius) - 4px);
