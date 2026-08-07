@@ -285,8 +285,48 @@ function UsagePage() {
             )}
           </section>
 
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
+              {t("usage.other_title")}
+            </h2>
+            <ul className="divide-y divide-border">
+              <li className="flex items-start justify-between gap-4 py-3 text-sm">
+                <span>
+                  <span className="block text-foreground">{t("usage.storage")}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {t("usage.storage_hint")} · {stats.storageGb.toFixed(2)} GB
+                  </span>
+                </span>
+                <strong className="whitespace-nowrap text-foreground">
+                  {usd(stats.storageCost)}
+                </strong>
+              </li>
+              <li className="flex items-start justify-between gap-4 py-3 text-sm">
+                <span>
+                  <span className="block text-foreground">{t("usage.gateway")}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {t("usage.gateway_hint")}
+                  </span>
+                </span>
+                <strong className="whitespace-nowrap text-muted-foreground">
+                  {t("usage.gateway_value")}
+                </strong>
+              </li>
+              <li className="flex items-center justify-between gap-4 py-3 text-sm">
+                <span className="font-semibold text-foreground">
+                  {t("usage.grand_total")}
+                </span>
+                <strong className="whitespace-nowrap text-base text-primary">
+                  {usd(stats.monthCost + stats.storageCost)}
+                </strong>
+              </li>
+            </ul>
+          </section>
+
           <p className="text-xs text-muted-foreground">{t("usage.disclaimer")}</p>
           <p className="text-xs text-muted-foreground">{t("usage.rate_note")}</p>
+          <p className="text-xs text-muted-foreground">{t("usage.storage_note")}</p>
+
 
         </div>
       )}
