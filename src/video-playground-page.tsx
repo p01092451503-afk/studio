@@ -198,20 +198,24 @@ export function VideoPlaygroundPage() {
     try {
       const plainPrompt = removeLegacyMentionMarkers(prompt.trim());
       let brief: ReferenceBrief | null = null;
-      if (studyPaths.length) {
-        brief = await analyze({ data: { imagePaths: studyPaths, intent: plainPrompt, hasVideoFrames: hasVideo } }) as ReferenceBrief;
+      let finalPrompt = plainPrompt;
+      if (!rawPromptMode) {
+        if (studyPaths.length) {
+          brief = await analyze({ data: { imagePaths: studyPaths, intent: plainPrompt, hasVideoFrames: hasVideo } }) as ReferenceBrief;
+        }
+        const composed = await compose({ data: {
+          subject: brief?.subject ?? "", action: plainPrompt,
+          camera: [brief?.camera, brief?.motion].filter(Boolean).join("; "),
+          lighting: brief?.lighting ?? "", style: brief?.style ?? "",
+        } });
+        finalPrompt = composed.finalPrompt;
       }
-      const composed = await compose({ data: {
-        subject: brief?.subject ?? "", action: plainPrompt,
-        camera: [brief?.camera, brief?.motion].filter(Boolean).join("; "),
-        lighting: brief?.lighting ?? "", style: brief?.style ?? "",
-      } });
       await gen.run({
         workLabel: "Playground", provider: "seedance", mode: firstReference ? "i2v" : "t2v",
-        finalPrompt: composed.finalPrompt, negativePrompt: brief?.negative || undefined,
-         rawPrompt: plainPrompt, promptEdited: true, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
+        finalPrompt, negativePrompt: brief?.negative || undefined,
+         rawPrompt: plainPrompt, promptEdited: !rawPromptMode, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
          durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: studyPaths,
-        options: { playground: true, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief,
+        options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief,
           references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, directlySuppliedToModel: true })) },
       });
       toast.success("Your video is now being created.");
