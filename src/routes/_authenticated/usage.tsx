@@ -55,6 +55,18 @@ function usd(n: number) {
   return `$${n.toFixed(2)}`;
 }
 
+/** Rough encoded bitrate (MB per second of video) used to estimate stored size. */
+const MB_PER_SECOND: Record<SeedanceResolution, number> = {
+  "480p": 0.35,
+  "720p": 0.75,
+  "1080p": 1.6,
+  "4K": 5.5,
+};
+
+/** Lovable Cloud / Supabase storage rate, USD per GB per month. */
+const STORAGE_USD_PER_GB_MONTH = 0.021;
+
+
 function UsagePage() {
   const { t } = useTranslation();
   const { tenantId } = useTenant();
@@ -136,6 +148,16 @@ function UsagePage() {
       cost: cost(r),
     }));
 
+    const storageGb =
+      billable.reduce(
+        (s, r) =>
+          s +
+          MB_PER_SECOND[normalizeResolution(r.actual_resolution ?? r.resolution)] *
+            (r.actual_duration_seconds ?? r.duration_seconds ?? 5),
+        0,
+      ) / 1024;
+    const storageCost = storageGb * STORAGE_USD_PER_GB_MONTH;
+
     return {
       items,
       total: list.length,
@@ -144,9 +166,12 @@ function UsagePage() {
       totalCost,
       monthCost,
       totalSeconds,
+      storageGb,
+      storageCost,
       byMonth: [...byMonth.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1)),
       byResolution: byResolution.sort((a, b) => b.cost - a.cost),
     };
+
   }, [rows]);
 
   return (
@@ -260,8 +285,48 @@ function UsagePage() {
             )}
           </section>
 
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
+              {t("usage.other_title")}
+            </h2>
+            <ul className="divide-y divide-border">
+              <li className="flex items-start justify-between gap-4 py-3 text-sm">
+                <span>
+                  <span className="block text-foreground">{t("usage.storage")}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {t("usage.storage_hint")} · {stats.storageGb.toFixed(2)} GB
+                  </span>
+                </span>
+                <strong className="whitespace-nowrap text-foreground">
+                  {usd(stats.storageCost)}
+                </strong>
+              </li>
+              <li className="flex items-start justify-between gap-4 py-3 text-sm">
+                <span>
+                  <span className="block text-foreground">{t("usage.gateway")}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {t("usage.gateway_hint")}
+                  </span>
+                </span>
+                <strong className="whitespace-nowrap text-muted-foreground">
+                  {t("usage.gateway_value")}
+                </strong>
+              </li>
+              <li className="flex items-center justify-between gap-4 py-3 text-sm">
+                <span className="font-semibold text-foreground">
+                  {t("usage.grand_total")}
+                </span>
+                <strong className="whitespace-nowrap text-base text-primary">
+                  {usd(stats.monthCost + stats.storageCost)}
+                </strong>
+              </li>
+            </ul>
+          </section>
+
           <p className="text-xs text-muted-foreground">{t("usage.disclaimer")}</p>
           <p className="text-xs text-muted-foreground">{t("usage.rate_note")}</p>
+          <p className="text-xs text-muted-foreground">{t("usage.storage_note")}</p>
+
 
         </div>
       )}

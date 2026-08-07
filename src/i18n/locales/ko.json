@@ -506,6 +506,14 @@
     "col_duration": "길이",
     "col_cost": "예상 비용",
     "sum": "합계",
-    "rate_note": "요금 기준: 5초 기준 480p $0.35 / 720p $0.76 / 1080p $1.87 / 4K $3.89 (초당 단가 × 영상 길이)."
+    "rate_note": "요금 기준: 5초 기준 480p $0.35 / 720p $0.76 / 1080p $1.87 / 4K $3.89 (초당 단가 × 영상 길이).",
+    "other_title": "기타 예상 비용",
+    "storage": "스토리지 (Lovable Cloud)",
+    "storage_hint": "생성 영상 용량 추정치 기준 월 예상 비용",
+    "gateway": "Lovable AI Gateway",
+    "gateway_value": "사용 안 함",
+    "gateway_hint": "현재 영상 생성은 BytePlus ARK를 직접 호출하므로 Gateway 비용이 발생하지 않습니다.",
+    "grand_total": "월 합계 예상 (영상 + 스토리지)",
+    "storage_note": "스토리지 용량은 해상도·길이 기준 추정 비트레이트로 계산했으며, 참고용으로 업로드한 파일은 포함되지 않습니다. 요율은 GB당 월 $0.021을 적용했습니다."
   }
 }
