@@ -148,6 +148,16 @@ function UsagePage() {
       cost: cost(r),
     }));
 
+    const storageGb =
+      billable.reduce(
+        (s, r) =>
+          s +
+          MB_PER_SECOND[normalizeResolution(r.actual_resolution ?? r.resolution)] *
+            (r.actual_duration_seconds ?? r.duration_seconds ?? 5),
+        0,
+      ) / 1024;
+    const storageCost = storageGb * STORAGE_USD_PER_GB_MONTH;
+
     return {
       items,
       total: list.length,
@@ -156,9 +166,12 @@ function UsagePage() {
       totalCost,
       monthCost,
       totalSeconds,
+      storageGb,
+      storageCost,
       byMonth: [...byMonth.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1)),
       byResolution: byResolution.sort((a, b) => b.cost - a.cost),
     };
+
   }, [rows]);
 
   return (
