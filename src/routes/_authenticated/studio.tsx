@@ -47,9 +47,8 @@ function StudioHub() {
         />
       </div>
 
-      <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <QuickLink to="/projects" icon={<FolderKanban className="h-4 w-4" />} label={t("sidebar.projects")} />
-        <QuickLink to="/characters" icon={<Users className="h-4 w-4" />} label={t("sidebar.characters")} />
         <QuickLink to="/history" icon={<History className="h-4 w-4" />} label={t("sidebar.history")} />
       </div>
     </main>
