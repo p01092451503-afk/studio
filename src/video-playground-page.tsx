@@ -143,7 +143,6 @@ export function VideoPlaygroundPage() {
   const [tourOpen, setTourOpen] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
   const [checkingHealth, setCheckingHealth] = useState(false);
-  const [costSummary, setCostSummary] = useState<CostSummary>({ completedCount: 0, estimatedTotal: 0 });
 
   useEffect(() => { if (shouldStartVideoTour()) setTourOpen(true); }, []);
   useEffect(() => {
