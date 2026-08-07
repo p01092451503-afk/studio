@@ -239,14 +239,15 @@ export function VideoPlaygroundPage() {
     setPreparing(true);
     try {
       const plainPrompt = removeLegacyMentionMarkers(prompt.trim());
+      const roleDirective = buildRoleDirective(assets);
       let brief: ReferenceBrief | null = null;
-      let finalPrompt = plainPrompt;
+      let finalPrompt = roleDirective ? `${roleDirective}\n${plainPrompt}` : plainPrompt;
       if (!rawPromptMode) {
         if (studyPaths.length) {
           brief = await analyze({ data: { imagePaths: studyPaths, intent: plainPrompt, hasVideoFrames: hasVideo } }) as ReferenceBrief;
         }
         const composed = await compose({ data: {
-          subject: brief?.subject ?? "", action: plainPrompt,
+          subject: [brief?.subject, roleDirective].filter(Boolean).join(" "), action: plainPrompt,
           camera: [brief?.camera, brief?.motion].filter(Boolean).join("; "),
           lighting: brief?.lighting ?? "", style: brief?.style ?? "",
         } });
@@ -257,9 +258,10 @@ export function VideoPlaygroundPage() {
         finalPrompt, negativePrompt: brief?.negative || undefined,
          rawPrompt: plainPrompt, promptEdited: !rawPromptMode, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
          durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: studyPaths,
-        options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief,
-          references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, directlySuppliedToModel: true })) },
+        options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief, referenceRoleDirective: roleDirective,
+          references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, tag: asset.tag, role: asset.role, directlySuppliedToModel: true })) },
       });
+
       toast.success("Your video is now being created.");
     } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); }
     finally { setPreparing(false); }
