@@ -67,34 +67,99 @@ const MB_PER_SECOND: Record<SeedanceResolution, number> = {
 const STORAGE_USD_PER_GB_MONTH = 0.021;
 
 
+type ResultRow = {
+  video_generation_id: string;
+  storage_path: string;
+  duration_seconds: number | null;
+  width: number | null;
+  height: number | null;
+};
+
+function resolutionFromHeight(h: number | null): SeedanceResolution {
+  if (!h) return "720p";
+  if (h >= 1800) return "4K";
+  if (h >= 1000) return "1080p";
+  if (h <= 520) return "480p";
+  return "720p";
+}
+
+function gb(bytes: number) {
+  return bytes / 1024 / 1024 / 1024;
+}
+
 function UsagePage() {
   const { t } = useTranslation();
   const { tenantId } = useTenant();
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [results, setResults] = useState<ResultRow[] | null>(null);
+  const [measured, setMeasured] = useState<{ files: number; bytes: number } | null>(null);
+  const [measuring, setMeasuring] = useState(false);
 
   useEffect(() => {
     if (!tenantId) return;
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from("video_generations")
-        .select(
-          "id, status, work_label, created_at, resolution, actual_resolution, duration_seconds, actual_duration_seconds",
-        )
-        .order("created_at", { ascending: false })
-        .limit(1000);
+      const [gen, res] = await Promise.all([
+        supabase
+          .from("video_generations")
+          .select(
+            "id, status, work_label, created_at, resolution, actual_resolution, duration_seconds, actual_duration_seconds",
+          )
+          .order("created_at", { ascending: false })
+          .limit(1000),
+        supabase
+          .from("video_results")
+          .select("video_generation_id, storage_path, duration_seconds, width, height")
+          .limit(2000),
+      ]);
       if (cancelled) return;
-      if (error) {
-        toast.error(error.message);
+      if (gen.error) {
+        toast.error(gen.error.message);
         setRows([]);
-        return;
+      } else {
+        setRows((gen.data ?? []) as Row[]);
       }
-      setRows((data ?? []) as Row[]);
+      setResults(res.error ? [] : ((res.data ?? []) as ResultRow[]));
     })();
     return () => {
       cancelled = true;
     };
   }, [tenantId]);
+
+  async function measureStorage() {
+    if (!results?.length) return;
+    setMeasuring(true);
+    try {
+      const dirs = [
+        ...new Set(results.map((r) => r.storage_path.split("/").slice(0, -1).join("/"))),
+      ].slice(0, 300);
+      let bytes = 0;
+      let files = 0;
+      for (let i = 0; i < dirs.length; i += 6) {
+        const chunk = dirs.slice(i, i + 6);
+        const lists = await Promise.all(
+          chunk.map((d) =>
+            supabase.storage.from("generation-outputs").list(d, { limit: 100 }),
+          ),
+        );
+        for (const l of lists) {
+          for (const f of l.data ?? []) {
+            const size = (f.metadata as { size?: number } | null)?.size ?? 0;
+            if (size > 0) {
+              bytes += size;
+              files += 1;
+            }
+          }
+        }
+      }
+      setMeasured({ files, bytes });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setMeasuring(false);
+    }
+  }
+
 
   const stats = useMemo(() => {
     const list = rows ?? [];
