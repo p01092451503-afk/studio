@@ -18,7 +18,6 @@ import { composeVideoPrompt } from "@/lib/video-prompt.functions";
 import { checkVideoModelHealth } from "@/lib/video-health.functions";
 import { explainVideoError } from "@/lib/video-errors";
 import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
-import { estimateSeedanceVideoCost, type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
 
 type MediaKind = "image" | "video" | "audio";
