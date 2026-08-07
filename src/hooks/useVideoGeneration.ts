@@ -106,10 +106,11 @@ export function useVideoGeneration(tenantId: string | null) {
         if (res.status === "error") setError(res.error ?? "VIDEO_FAILED");
       } catch (e) {
         if (cancelled) return;
-        if (recoverStaleServerFunction(e)) return;
-        setError(e instanceof Error ? e.message : String(e));
+        // 어떤 경우든 진행중 세션은 정리한다 (히스토리에 running 이 남는 문제 방지)
         setRunning(false);
         writeStoredId(null);
+        if (recoverStaleServerFunction(e)) return;
+        setError(e instanceof Error ? e.message : String(e));
       }
     };
 
