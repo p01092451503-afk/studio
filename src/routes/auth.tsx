@@ -13,9 +13,9 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
   head: () => ({
     meta: [
-      { title: "로그인 · 웹툰 영상 생성기" },
+      { title: "Sign in · Webtoon Video Generator" },
       { name: "description", content: "Sign in or create your pilotstudio account" },
-      { property: "og:title", content: "웹툰 영상 생성기 로그인" },
+      { property: "og:title", content: "Sign in · Webtoon Video Generator" },
       { property: "og:description", content: "Sign in or create your pilotstudio account" },
     ],
   }),
