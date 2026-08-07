@@ -18,7 +18,7 @@ import { composeVideoPrompt } from "@/lib/video-prompt.functions";
 import { checkVideoModelHealth } from "@/lib/video-health.functions";
 import { explainVideoError } from "@/lib/video-errors";
 import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
-import { estimateSeedanceVideoCost, type SeedanceResolution } from "@/lib/video-constants";
+import { type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
 
 type MediaKind = "image" | "video" | "audio";
@@ -143,7 +143,6 @@ export function VideoPlaygroundPage() {
   const [tourOpen, setTourOpen] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
   const [checkingHealth, setCheckingHealth] = useState(false);
-  const [costSummary, setCostSummary] = useState<CostSummary>({ completedCount: 0, estimatedTotal: 0 });
 
   useEffect(() => { if (shouldStartVideoTour()) setTourOpen(true); }, []);
   useEffect(() => {
@@ -153,50 +152,12 @@ export function VideoPlaygroundPage() {
     const timer = window.setInterval(() => void run(), 30_000);
     return () => { active = false; window.clearInterval(timer); };
   }, [checkHealth]);
-  useEffect(() => {
-    if (!tenantId) {
-      setCostSummary({ completedCount: 0, estimatedTotal: 0 });
-      return;
-    }
-    let active = true;
-    const loadCostSummary = async () => {
-      const { data, error } = await supabase
-        .from("video_generations")
-        .select("resolution, duration_seconds, actual_resolution, actual_duration_seconds, options")
-        .eq("tenant_id", tenantId)
-        .eq("status", "done");
-      if (!active || error) return;
-      const estimatedTotal = (data ?? []).reduce((total, item) => {
-        const selectedResolution = item.actual_resolution ?? item.resolution;
-        const safeResolution: SeedanceResolution =
-          selectedResolution === "480p" ||
-          selectedResolution === "1080p" ||
-          selectedResolution === "4K"
-            ? selectedResolution
-            : "720p";
-        const selectedDuration = item.actual_duration_seconds ?? item.duration_seconds ?? 0;
-        const options = item.options && typeof item.options === "object" && !Array.isArray(item.options)
-          ? item.options as Record<string, unknown>
-          : {};
-        const quantity = typeof options.outputQuantity === "number" ? options.outputQuantity : 1;
-        return total + estimateSeedanceVideoCost(safeResolution, Number(selectedDuration)) * quantity;
-      }, 0);
-      setCostSummary({ completedCount: data?.length ?? 0, estimatedTotal });
-    };
-    void loadCostSummary();
-    return () => { active = false; };
-  }, [tenantId, gen.row?.id, gen.row?.status]);
-
   const studyPaths = useMemo(() => assets.flatMap((asset) => asset.framePaths).slice(0, 8), [assets]);
   const firstReference = studyPaths[0] ?? null;
   const hasVideo = assets.some((asset) => asset.kind === "video");
   const readyCount = health?.models.filter((model) => model.status === "available").length ?? 0;
   const seedanceHealth = health?.models.find((model) => model.provider === "seedance") ?? null;
   const busy = uploading || preparing || gen.running;
-  const estimatedCost = useMemo(
-    () => estimateSeedanceVideoCost(resolution, durationSeconds) * outputQuantity,
-    [resolution, durationSeconds, outputQuantity],
-  );
 
   async function uploadBlob(blob: Blob, name: string) {
     if (!tenantId) throw new Error("NO_TENANT");
@@ -351,12 +312,7 @@ export function VideoPlaygroundPage() {
                <OptionRow label={t("playground.duration")}><div className="grid grid-cols-5 gap-1">{[4, 5, 6, 8, 10].map((seconds) => <Button key={seconds} type="button" size="sm" variant={durationSeconds === seconds ? "default" : "ghost"} className="h-9" disabled={busy} onClick={() => setDurationSeconds(seconds)}>{seconds}s</Button>)}</div></OptionRow>
                <OptionRow label={t("playground.quantity")}><div className="grid grid-cols-4 gap-1">{[1, 2, 3, 4].map((quantity) => <Button key={quantity} type="button" size="sm" variant={outputQuantity === quantity ? "default" : "ghost"} className="h-9" disabled={busy} onClick={() => setOutputQuantity(quantity)}>{quantity}</Button>)}</div></OptionRow>
                <OptionRow label={t("playground.sound")}><div className="grid grid-cols-2 gap-1"><Button type="button" size="sm" variant={generateAudio ? "default" : "ghost"} className="h-9" disabled={busy} onClick={() => setGenerateAudio(true)}><Volume2 className="h-4 w-4" />{t("playground.on")}</Button><Button type="button" size="sm" variant={!generateAudio ? "default" : "ghost"} className="h-9" disabled={busy} onClick={() => setGenerateAudio(false)}><VolumeX className="h-4 w-4" />{t("playground.off")}</Button></div></OptionRow>
-              <div className="grid gap-4 border-t border-border pt-3 sm:col-span-2 sm:grid-cols-2">
-                 <div className="flex items-end justify-between gap-3 border-b border-border pb-4 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4"><div><p className="text-xs font-bold">{t("playground.cost_request")}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t("playground.cost_request_sub", { count: outputQuantity })}</p></div><p className="shrink-0 text-xl font-extrabold tabular-nums">${estimatedCost.toFixed(2)} <span className="text-xs font-semibold text-muted-foreground">USD</span></p></div>
-                <div className="flex items-end justify-between gap-3 sm:pl-1"><div><p className="text-xs font-bold">{t("playground.cost_total")}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t("playground.cost_total_sub", { count: costSummary.completedCount })}</p></div><p className="shrink-0 text-xl font-extrabold tabular-nums">${costSummary.estimatedTotal.toFixed(2)} <span className="text-xs font-semibold text-muted-foreground">USD</span></p></div>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground sm:col-span-2">{t("playground.pricing_note")}</p>
-            </div>
+                </div>
             <Button data-video-tour="generate" onClick={generate} disabled={busy || !prompt.trim()} className="h-13 w-full text-base font-bold">{busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Film className="h-5 w-5" />}{preparing ? t("playground.preparing") : gen.running ? t("playground.generating") : t("playground.generate")}</Button>
           </div>
         </section>
