@@ -37,9 +37,6 @@ const REFERENCE_ROLES: { id: ReferenceRoleId; ko: string; en: string }[] = [
   { id: "motion", ko: "동작/모션", en: "the motion and action timing" },
 ];
 
-function roleLabel(id: ReferenceRoleId) {
-  return REFERENCE_ROLES.find((role) => role.id === id)?.ko ?? id;
-}
 
 function autoRoleFor(kind: "image" | "video", imageIndex: number): ReferenceRoleId {
   if (kind === "video") return "motion";
