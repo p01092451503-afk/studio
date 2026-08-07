@@ -239,6 +239,29 @@ function UsagePage() {
 
   }, [rows]);
 
+  const actual = useMemo(() => {
+    const list = results ?? [];
+    const seconds = list.reduce((s, r) => s + Number(r.duration_seconds ?? 0), 0);
+    const cost = list.reduce(
+      (s, r) =>
+        s +
+        estimateSeedanceVideoCost(
+          resolutionFromHeight(r.height),
+          Number(r.duration_seconds ?? 5),
+        ),
+      0,
+    );
+    const estGb =
+      list.reduce(
+        (s, r) =>
+          s +
+          MB_PER_SECOND[resolutionFromHeight(r.height)] * Number(r.duration_seconds ?? 5),
+        0,
+      ) / 1024;
+    return { count: list.length, seconds, cost, estGb };
+  }, [results]);
+
+
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-8">
       <header className="mb-6">
