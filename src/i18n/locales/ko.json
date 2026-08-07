@@ -514,7 +514,7 @@
     "other_title": "기타 예상 비용",
     "storage": "스토리지\u00a0",
     "storage_hint": "생성 영상 용량 추정치 기준 월 예상 비용",
-    "gateway": "Lovable AI Gateway",
+    "gateway": "AI Gateway",
     "gateway_value": "사용 안 함",
     "gateway_hint": "현재 영상 생성은 BytePlus ARK를 직접 호출하므로 Gateway 비용이 발생하지 않습니다.",
     "grand_total": "월 합계 예상 (영상 + 스토리지)",
