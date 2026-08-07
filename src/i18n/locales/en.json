@@ -50,7 +50,8 @@
     "video": "Video studio",
     "group_assets": "Assets",
     "group_studio": "Studios",
-    "group_records": "Records"
+    "group_records": "Records",
+    "usage": "Usage & cost"
   },
   "header": {
     "projects": {
@@ -485,5 +486,18 @@
     "label": "Language",
     "ko": "한국어",
     "en": "English"
+  },
+  "usage": {
+    "title": "Usage & cost",
+    "subtitle": "Estimated Seedance video generation spend by month and resolution.",
+    "loading": "Loading…",
+    "month_cost": "This month (est.)",
+    "total_cost": "All time (est.)",
+    "generated": "Succeeded / total",
+    "by_month": "Cost by month",
+    "by_resolution": "Cost by resolution",
+    "empty": "No generations yet.",
+    "disclaimer": "Estimates based on BytePlus Seedance 2.0 published rates; actual billing may differ. Failed generations are excluded.",
+    "nav": "Usage & cost"
   }
 }

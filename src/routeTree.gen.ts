@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVideoRouteImport } from './routes/_authenticated/video'
+import { Route as AuthenticatedUsageRouteImport } from './routes/_authenticated/usage'
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
@@ -38,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedVideoRoute = AuthenticatedVideoRouteImport.update({
   id: '/video',
   path: '/video',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedUsageRoute = AuthenticatedUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/generate': typeof AuthenticatedGenerateRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/studio': typeof AuthenticatedStudioRoute
+  '/usage': typeof AuthenticatedUsageRoute
   '/video': typeof AuthenticatedVideoRoute
   '/episodes/$id': typeof AuthenticatedEpisodesIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/generate': typeof AuthenticatedGenerateRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/studio': typeof AuthenticatedStudioRoute
+  '/usage': typeof AuthenticatedUsageRoute
   '/video': typeof AuthenticatedVideoRoute
   '/episodes/$id': typeof AuthenticatedEpisodesIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/studio': typeof AuthenticatedStudioRoute
+  '/_authenticated/usage': typeof AuthenticatedUsageRoute
   '/_authenticated/video': typeof AuthenticatedVideoRoute
   '/_authenticated/episodes/$id': typeof AuthenticatedEpisodesIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/generate'
     | '/history'
     | '/studio'
+    | '/usage'
     | '/video'
     | '/episodes/$id'
     | '/projects/$id'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/generate'
     | '/history'
     | '/studio'
+    | '/usage'
     | '/video'
     | '/episodes/$id'
     | '/projects/$id'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/_authenticated/generate'
     | '/_authenticated/history'
     | '/_authenticated/studio'
+    | '/_authenticated/usage'
     | '/_authenticated/video'
     | '/_authenticated/episodes/$id'
     | '/_authenticated/projects/$id'
@@ -189,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/video'
       fullPath: '/video'
       preLoaderRoute: typeof AuthenticatedVideoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/usage': {
+      id: '/_authenticated/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof AuthenticatedUsageRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/studio': {
@@ -248,6 +267,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
+  AuthenticatedUsageRoute: typeof AuthenticatedUsageRoute
   AuthenticatedVideoRoute: typeof AuthenticatedVideoRoute
   AuthenticatedEpisodesIdRoute: typeof AuthenticatedEpisodesIdRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
@@ -259,6 +279,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedStudioRoute: AuthenticatedStudioRoute,
+  AuthenticatedUsageRoute: AuthenticatedUsageRoute,
   AuthenticatedVideoRoute: AuthenticatedVideoRoute,
   AuthenticatedEpisodesIdRoute: AuthenticatedEpisodesIdRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,

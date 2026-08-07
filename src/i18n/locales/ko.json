@@ -55,7 +55,8 @@
     "video": "영상 스튜디오",
     "group_assets": "자료",
     "group_studio": "스튜디오",
-    "group_records": "기록"
+    "group_records": "기록",
+    "usage": "비용"
   },
   "header": {
     "projects": {
@@ -485,5 +486,18 @@
     "toast_ark_fail": "연결 확인에 실패했습니다.",
     "role_multi_hint": "복수 선택 가능해요.",
     "auto_directive_title": "자동 생성된 레퍼런스 지시문"
+  },
+  "usage": {
+    "title": "비용 · 사용량",
+    "subtitle": "Seedance 영상 생성 예상 비용을 월별·해상도별로 확인합니다.",
+    "loading": "불러오는 중…",
+    "month_cost": "이번 달 예상 비용",
+    "total_cost": "누적 예상 비용",
+    "generated": "생성 성공 / 전체",
+    "by_month": "월별 비용",
+    "by_resolution": "해상도별 비용",
+    "empty": "아직 집계된 생성이 없습니다.",
+    "disclaimer": "BytePlus 공식 요금표(Seedance 2.0) 기준의 예상값이며 실제 청구 금액과 다를 수 있습니다. 실패한 생성은 집계에서 제외됩니다.",
+    "nav": "비용"
   }
 }
