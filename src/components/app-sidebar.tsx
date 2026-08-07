@@ -13,7 +13,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,12 +48,12 @@ export function AppSidebar() {
       <SidebarHeader className="border-none pt-3 pb-2">
         <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2 px-2"}`}>
           <Link
-            to="/"
+            to="/video"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             
             {!collapsed && (
-              <span className="text-[37px] font-black tracking-tighter text-foreground leading-none">
+              <span className="text-2xl font-black tracking-tight text-foreground leading-none">
                 {t("brand.name")}
               </span>
             )}
