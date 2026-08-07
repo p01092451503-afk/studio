@@ -289,7 +289,7 @@ export function VideoPlaygroundPage() {
          rawPrompt: plainPrompt, promptEdited: !rawPromptMode, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
          durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: studyPaths,
         options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief, referenceRoleDirective: roleDirective,
-          references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, tag: asset.tag, role: asset.role, directlySuppliedToModel: true })) },
+          references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, tag: asset.tag, roles: asset.roles, directlySuppliedToModel: asset.kind !== "audio" })) },
       });
 
       toast.success(t("playground.toast_started"));
