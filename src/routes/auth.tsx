@@ -13,9 +13,9 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
   head: () => ({
     meta: [
-      { title: "Sign in · pilotstudio" },
+      { title: "로그인 · 웹툰 영상 생성기" },
       { name: "description", content: "Sign in or create your pilotstudio account" },
-      { property: "og:title", content: "pilotstudio sign in" },
+      { property: "og:title", content: "웹툰 영상 생성기 로그인" },
       { property: "og:description", content: "Sign in or create your pilotstudio account" },
     ],
   }),
