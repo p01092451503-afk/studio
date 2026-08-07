@@ -498,6 +498,14 @@
     "by_resolution": "해상도별 비용",
     "empty": "아직 집계된 생성이 없습니다.",
     "disclaimer": "BytePlus 공식 요금표(Seedance 2.0) 기준의 예상값이며 실제 청구 금액과 다를 수 있습니다. 실패한 생성은 집계에서 제외됩니다.",
-    "nav": "비용"
+    "nav": "비용",
+    "per_item": "건별 비용",
+    "col_date": "생성 일시",
+    "col_label": "작업",
+    "col_resolution": "해상도",
+    "col_duration": "길이",
+    "col_cost": "예상 비용",
+    "sum": "합계",
+    "rate_note": "요금 기준: 5초 기준 480p $0.35 / 720p $0.76 / 1080p $1.87 / 4K $3.89 (초당 단가 × 영상 길이)."
   }
 }
