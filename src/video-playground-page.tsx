@@ -108,7 +108,11 @@ export function VideoPlaygroundPage() {
       const estimatedTotal = (data ?? []).reduce((total, item) => {
         const selectedResolution = item.actual_resolution ?? item.resolution;
         const safeResolution: SeedanceResolution =
-          selectedResolution === "480p" || selectedResolution === "1080p" ? selectedResolution : "720p";
+          selectedResolution === "480p" ||
+          selectedResolution === "1080p" ||
+          selectedResolution === "4K"
+            ? selectedResolution
+            : "720p";
         const selectedDuration = item.actual_duration_seconds ?? item.duration_seconds ?? 0;
         const options = item.options && typeof item.options === "object" && !Array.isArray(item.options)
           ? item.options as Record<string, unknown>
