@@ -20,11 +20,46 @@ import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { estimateSeedanceVideoCost, type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
 
-type MediaAsset = { id: string; name: string; kind: "image" | "video"; coverPath: string; framePaths: string[] };
+type ReferenceRoleId = "character" | "background" | "costume" | "prop" | "pose" | "style" | "motion";
+type MediaAsset = { id: string; name: string; kind: "image" | "video"; tag: string; role: ReferenceRoleId | null; coverPath: string; framePaths: string[] };
 type ValidationState = "valid" | "invalid" | "missing" | "available" | "configured" | "unavailable" | "not_configured" | "unknown";
 type HealthModel = { provider: string; label: string; status: "available" | "unavailable" | "unknown"; detail: string; validation?: { credential: ValidationState; model: ValidationState; endpoint: ValidationState; configuredEndpoint: string | null } };
 type Health = { checkedAt: string; models: HealthModel[] };
 type CostSummary = { completedCount: number; estimatedTotal: number };
+
+const REFERENCE_ROLES: { id: ReferenceRoleId; ko: string; en: string }[] = [
+  { id: "character", ko: "캐릭터", en: "the main character identity (face, hair, body proportions)" },
+  { id: "background", ko: "배경", en: "the background environment and location" },
+  { id: "costume", ko: "의상", en: "the outfit and clothing design" },
+  { id: "prop", ko: "소품", en: "a prop or object appearing in the scene" },
+  { id: "pose", ko: "포즈/구도", en: "the pose, composition and camera framing" },
+  { id: "style", ko: "스타일", en: "the art style, color grading and finish" },
+  { id: "motion", ko: "동작/모션", en: "the motion and action timing" },
+];
+
+function roleLabel(id: ReferenceRoleId) {
+  return REFERENCE_ROLES.find((role) => role.id === id)?.ko ?? id;
+}
+
+function autoRoleFor(kind: "image" | "video", imageIndex: number): ReferenceRoleId {
+  if (kind === "video") return "motion";
+  if (imageIndex === 0) return "character";
+  if (imageIndex === 1) return "background";
+  if (imageIndex === 2) return "costume";
+  return "style";
+}
+
+function buildRoleDirective(assets: MediaAsset[]) {
+  const tagged = assets.filter((asset) => asset.role);
+  if (!tagged.length) return "";
+  return tagged
+    .map((asset) => {
+      const role = REFERENCE_ROLES.find((item) => item.id === asset.role);
+      return `${asset.tag} is the reference for ${role?.en ?? asset.role}.`;
+    })
+    .join(" ");
+}
+
 
 function removeLegacyMentionMarkers(value: string) {
   return value.replace(/@(?=[\p{L}\p{N}_-])/gu, "");
