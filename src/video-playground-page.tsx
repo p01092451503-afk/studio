@@ -20,11 +20,43 @@ import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { estimateSeedanceVideoCost, type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
 
-type MediaAsset = { id: string; name: string; kind: "image" | "video"; coverPath: string; framePaths: string[] };
+type ReferenceRoleId = "character" | "background" | "costume" | "prop" | "pose" | "style" | "motion";
+type MediaAsset = { id: string; name: string; kind: "image" | "video"; tag: string; role: ReferenceRoleId | null; coverPath: string; framePaths: string[] };
 type ValidationState = "valid" | "invalid" | "missing" | "available" | "configured" | "unavailable" | "not_configured" | "unknown";
 type HealthModel = { provider: string; label: string; status: "available" | "unavailable" | "unknown"; detail: string; validation?: { credential: ValidationState; model: ValidationState; endpoint: ValidationState; configuredEndpoint: string | null } };
 type Health = { checkedAt: string; models: HealthModel[] };
 type CostSummary = { completedCount: number; estimatedTotal: number };
+
+const REFERENCE_ROLES: { id: ReferenceRoleId; ko: string; en: string }[] = [
+  { id: "character", ko: "캐릭터", en: "the main character identity (face, hair, body proportions)" },
+  { id: "background", ko: "배경", en: "the background environment and location" },
+  { id: "costume", ko: "의상", en: "the outfit and clothing design" },
+  { id: "prop", ko: "소품", en: "a prop or object appearing in the scene" },
+  { id: "pose", ko: "포즈/구도", en: "the pose, composition and camera framing" },
+  { id: "style", ko: "스타일", en: "the art style, color grading and finish" },
+  { id: "motion", ko: "동작/모션", en: "the motion and action timing" },
+];
+
+
+function autoRoleFor(kind: "image" | "video", imageIndex: number): ReferenceRoleId {
+  if (kind === "video") return "motion";
+  if (imageIndex === 0) return "character";
+  if (imageIndex === 1) return "background";
+  if (imageIndex === 2) return "costume";
+  return "style";
+}
+
+function buildRoleDirective(assets: MediaAsset[]) {
+  const tagged = assets.filter((asset) => asset.role);
+  if (!tagged.length) return "";
+  return tagged
+    .map((asset) => {
+      const role = REFERENCE_ROLES.find((item) => item.id === asset.role);
+      return `${asset.tag} is the reference for ${role?.en ?? asset.role}.`;
+    })
+    .join(" ");
+}
+
 
 function removeLegacyMentionMarkers(value: string) {
   return value.replace(/@(?=[\p{L}\p{N}_-])/gu, "");
@@ -151,17 +183,23 @@ export function VideoPlaygroundPage() {
     try {
       const added: MediaAsset[] = [];
       const prepared = prepareFigureFiles(files);
+      let imageCount = assets.filter((asset) => asset.kind === "image").length;
+      let videoCount = assets.filter((asset) => asset.kind === "video").length;
       for (const file of prepared.files) {
         if (assets.length + added.length >= 6) break;
         if (file.type.startsWith("video/")) {
           const frames = await extractVideoFrames(file, 3);
           const paths: string[] = [];
           for (let i = 0; i < frames.length; i += 1) paths.push(await uploadBlob(frames[i], `frame-${i}.jpg`));
-          if (paths.length) added.push({ id: crypto.randomUUID(), name: file.name, kind: "video", coverPath: paths[0], framePaths: paths });
+          if (paths.length) {
+            videoCount += 1;
+            added.push({ id: crypto.randomUUID(), name: file.name, kind: "video", tag: `@video${videoCount}`, role: autoRoleFor("video", videoCount - 1), coverPath: paths[0], framePaths: paths });
+          }
         } else if (file.type.startsWith("image/")) {
           const extension = file.name.split(".").pop() || "jpg";
           const path = await uploadBlob(file, `reference.${extension}`);
-          added.push({ id: crypto.randomUUID(), name: file.name, kind: "image", coverPath: path, framePaths: [path] });
+          imageCount += 1;
+          added.push({ id: crypto.randomUUID(), name: file.name, kind: "image", tag: `@image${imageCount}`, role: autoRoleFor("image", imageCount - 1), coverPath: path, framePaths: [path] });
         }
       }
       if (!added.length) throw new Error("Add an image or video file.");
@@ -169,9 +207,10 @@ export function VideoPlaygroundPage() {
       const missingNotice = prepared.missingFigureNumbers.length
         ? ` Missing: ${prepared.missingFigureNumbers.map((number) => `Figure ${number}`).join(", ")}.`
         : "";
-      toast.success(`${added.length} reference${added.length === 1 ? "" : "s"} added in Figure order.${missingNotice}`, {
+      toast.success(`${added.map((asset) => asset.tag).join(", ")} 태깅 완료 · 역할은 자동 추천되었습니다.${missingNotice}`, {
         duration: prepared.missingFigureNumbers.length ? 7000 : 4000,
       });
+
     } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); }
     finally { setUploading(false); }
   }
@@ -197,14 +236,15 @@ export function VideoPlaygroundPage() {
     setPreparing(true);
     try {
       const plainPrompt = removeLegacyMentionMarkers(prompt.trim());
+      const roleDirective = buildRoleDirective(assets);
       let brief: ReferenceBrief | null = null;
-      let finalPrompt = plainPrompt;
+      let finalPrompt = roleDirective ? `${roleDirective}\n${plainPrompt}` : plainPrompt;
       if (!rawPromptMode) {
         if (studyPaths.length) {
           brief = await analyze({ data: { imagePaths: studyPaths, intent: plainPrompt, hasVideoFrames: hasVideo } }) as ReferenceBrief;
         }
         const composed = await compose({ data: {
-          subject: brief?.subject ?? "", action: plainPrompt,
+          subject: [brief?.subject, roleDirective].filter(Boolean).join(" "), action: plainPrompt,
           camera: [brief?.camera, brief?.motion].filter(Boolean).join("; "),
           lighting: brief?.lighting ?? "", style: brief?.style ?? "",
         } });
@@ -215,9 +255,10 @@ export function VideoPlaygroundPage() {
         finalPrompt, negativePrompt: brief?.negative || undefined,
          rawPrompt: plainPrompt, promptEdited: !rawPromptMode, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
          durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: studyPaths,
-        options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief,
-          references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, directlySuppliedToModel: true })) },
+        options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief, referenceRoleDirective: roleDirective,
+          references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, tag: asset.tag, role: asset.role, directlySuppliedToModel: true })) },
       });
+
       toast.success("Your video is now being created.");
     } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); }
     finally { setPreparing(false); }
@@ -240,7 +281,18 @@ export function VideoPlaygroundPage() {
             <div data-video-tour="references" className="space-y-3"><div className="flex items-center justify-between"><Label className="font-bold">Reference images & videos</Label>{assets.length > 0 && <Button variant="ghost" size="sm" onClick={() => setAssets([])}><Trash2 className="h-4 w-4" /> Clear</Button>}</div>
               <label onDragEnter={handleReferenceDrag} onDragOver={handleReferenceDrag} onDragLeave={handleReferenceDrag} onDrop={handleReferenceDrop} className={`flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-5 text-center transition-colors ${dragActive ? "border-primary bg-primary-soft" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-primary-soft"}`}>{uploading ? <Loader2 className="h-7 w-7 animate-spin text-primary" /> : <ImagePlus className="h-7 w-7 text-primary" />}<span className="text-sm font-bold">{uploading ? "Preparing references…" : dragActive ? "Drop files to add them" : "Add or drag images and videos"}</span><span className="text-xs text-muted-foreground">Up to 6 files · images teach appearance and style · videos teach motion</span>
                 <input type="file" accept="image/*,video/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
-              {assets.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{assets.map((asset) => <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30"><SignedImage bucket="character-refs" path={asset.coverPath} alt={asset.name} className="aspect-video w-full object-cover" /><div className="flex items-center gap-2 px-3 py-2">{asset.kind === "video" ? <Video className="h-3.5 w-3.5 text-primary" /> : <ImagePlus className="h-3.5 w-3.5 text-primary" />}<span className="min-w-0 flex-1 truncate text-xs font-semibold">{asset.name}</span><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAssets((current) => current.filter((item) => item.id !== asset.id))} aria-label={`Remove ${asset.name}`}><X className="h-3.5 w-3.5" /></Button></div></div>)}</div>}
+              {assets.length > 0 && <div className="space-y-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">업로드하면 <span className="font-semibold text-foreground">@image1 · @video1</span> 형식으로 자동 태깅됩니다. 각 참고 자료의 역할을 아래에서 선택하면 프롬프트에 자동 반영됩니다.</p>
+                <div className="grid gap-3 sm:grid-cols-2">{assets.map((asset) => <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30">
+                  <SignedImage bucket="character-refs" path={asset.coverPath} alt={asset.name} className="aspect-video w-full object-cover" />
+                  <div className="flex items-center gap-2 px-3 py-2">{asset.kind === "video" ? <Video className="h-3.5 w-3.5 text-primary" /> : <ImagePlus className="h-3.5 w-3.5 text-primary" />}<span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-bold text-primary">{asset.tag}</span><span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{asset.name}</span><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAssets((current) => current.filter((item) => item.id !== asset.id))} aria-label={`Remove ${asset.name}`}><X className="h-3.5 w-3.5" /></Button></div>
+                  <div className="border-t border-border px-3 py-2">
+                    <p className="text-xs font-bold">{asset.tag}은(는) 어떤 역할인가요?</p>
+                    <div role="radiogroup" aria-label={`${asset.tag} role`} className="mt-2 flex flex-wrap gap-1">{REFERENCE_ROLES.map((role) => <button key={role.id} type="button" role="radio" aria-checked={asset.role === role.id} disabled={busy} onClick={() => setAssets((current) => current.map((item) => item.id === asset.id ? { ...item, role: role.id } : item))} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${asset.role === role.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}>{role.ko}</button>)}</div>
+                  </div>
+                </div>)}</div>
+              </div>}
+
             </div>
             <div data-video-tour="prompt" className="space-y-3"><div className="flex justify-between"><Label htmlFor="video-prompt" className="font-bold">Describe your video</Label><span className="text-xs text-muted-foreground">{prompt.length}/3000</span></div><Textarea id="video-prompt" value={prompt} maxLength={3000} disabled={busy} onChange={(event) => setPrompt(event.target.value)} placeholder="A woman in a red coat walks through a rainy neon street, then turns toward the camera and smiles…" className="min-h-44 resize-y rounded-lg text-base leading-relaxed" /><p className="text-xs text-muted-foreground">Write naturally in English. Uploaded references are used automatically—no tags are needed.</p>
               <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/20 p-3">
