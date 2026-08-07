@@ -312,8 +312,7 @@ export function VideoPlaygroundPage() {
                <OptionRow label={t("playground.duration")}><div className="grid grid-cols-5 gap-1">{[4, 5, 6, 8, 10].map((seconds) => <Button key={seconds} type="button" size="sm" variant={durationSeconds === seconds ? "default" : "ghost"} className="h-9" disabled={busy} onClick={() => setDurationSeconds(seconds)}>{seconds}s</Button>)}</div></OptionRow>
                <OptionRow label={t("playground.quantity")}><div className="grid grid-cols-4 gap-1">{[1, 2, 3, 4].map((quantity) => <Button key={quantity} type="button" size="sm" variant={outputQuantity === quantity ? "default" : "ghost"} className="h-9" disabled={busy} onClick={() => setOutputQuantity(quantity)}>{quantity}</Button>)}</div></OptionRow>
                <OptionRow label={t("playground.sound")}><div className="grid grid-cols-2 gap-1"><Button type="button" size="sm" variant={generateAudio ? "default" : "ghost"} className="h-9" disabled={busy} onClick={() => setGenerateAudio(true)}><Volume2 className="h-4 w-4" />{t("playground.on")}</Button><Button type="button" size="sm" variant={!generateAudio ? "default" : "ghost"} className="h-9" disabled={busy} onClick={() => setGenerateAudio(false)}><VolumeX className="h-4 w-4" />{t("playground.off")}</Button></div></OptionRow>
-               </div>
-            </div>
+                </div>
             <Button data-video-tour="generate" onClick={generate} disabled={busy || !prompt.trim()} className="h-13 w-full text-base font-bold">{busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Film className="h-5 w-5" />}{preparing ? t("playground.preparing") : gen.running ? t("playground.generating") : t("playground.generate")}</Button>
           </div>
         </section>
