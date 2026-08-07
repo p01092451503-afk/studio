@@ -514,6 +514,19 @@
     "gateway_value": "사용 안 함",
     "gateway_hint": "현재 영상 생성은 BytePlus ARK를 직접 호출하므로 Gateway 비용이 발생하지 않습니다.",
     "grand_total": "월 합계 예상 (영상 + 스토리지)",
-    "storage_note": "스토리지 용량은 해상도·길이 기준 추정 비트레이트로 계산했으며, 참고용으로 업로드한 파일은 포함되지 않습니다. 요율은 GB당 월 $0.021을 적용했습니다."
+    "storage_note": "스토리지 용량은 해상도·길이 기준 추정 비트레이트로 계산했으며, 참고용으로 업로드한 파일은 포함되지 않습니다. 요율은 GB당 월 $0.021을 적용했습니다.",
+    "compare_title": "예상치 vs 실제 사용량",
+    "estimated": "예상",
+    "actual": "실제",
+    "diff": "차이",
+    "metric": "항목",
+    "metric_count": "생성 건수",
+    "metric_seconds": "영상 길이 합계",
+    "metric_storage": "저장 용량",
+    "metric_cost": "생성 비용",
+    "measure": "실제 용량 측정",
+    "measuring": "측정 중…",
+    "not_measured": "측정 전",
+    "compare_note": "예상은 생성 요청값 기준, 실제는 저장된 결과물의 실측값 기준입니다. 저장 용량 실제값은 '실제 용량 측정'을 눌러야 스토리지에서 조회합니다."
   }
 }

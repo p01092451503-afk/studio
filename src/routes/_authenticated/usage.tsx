@@ -500,3 +500,24 @@ function Card({ label, value, hint }: { label: string; value: string; hint?: str
     </div>
   );
 }
+
+function CompareRow({
+  label,
+  est,
+  act,
+  diff,
+}: {
+  label: string;
+  est: string;
+  act: string;
+  diff: string;
+}) {
+  return (
+    <tr>
+      <td className="py-2 pr-3 text-muted-foreground">{label}</td>
+      <td className="py-2 pr-3 text-right text-foreground">{est}</td>
+      <td className="py-2 pr-3 text-right font-semibold text-foreground">{act}</td>
+      <td className="py-2 text-right text-muted-foreground">{diff}</td>
+    </tr>
+  );
+}
