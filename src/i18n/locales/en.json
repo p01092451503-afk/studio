@@ -512,7 +512,7 @@
     "sum": "Total",
     "rate_note": "Rates (5s): 480p $0.35 / 720p $0.76 / 1080p $1.87 / 4K $3.89 (per-second rate x duration).",
     "other_title": "Other estimated costs",
-    "storage": "Storage (Lovable Cloud)",
+    "storage": "Storage\u00a0",
     "storage_hint": "Monthly estimate from generated video size",
     "gateway": "Lovable AI Gateway",
     "gateway_value": "Not used",
