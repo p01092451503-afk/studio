@@ -37,7 +37,10 @@ export function AppSidebar() {
     },
     {
       label: t("sidebar.group_records"),
-      items: [{ title: t("sidebar.history"), url: "/history", icon: History }],
+      items: [
+        { title: t("sidebar.history"), url: "/history", icon: History },
+        { title: t("sidebar.usage"), url: "/usage", icon: Wallet },
+      ],
     },
   ] as const;
 
