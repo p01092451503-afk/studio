@@ -186,17 +186,23 @@ export function VideoPlaygroundPage() {
     try {
       const added: MediaAsset[] = [];
       const prepared = prepareFigureFiles(files);
+      let imageCount = assets.filter((asset) => asset.kind === "image").length;
+      let videoCount = assets.filter((asset) => asset.kind === "video").length;
       for (const file of prepared.files) {
         if (assets.length + added.length >= 6) break;
         if (file.type.startsWith("video/")) {
           const frames = await extractVideoFrames(file, 3);
           const paths: string[] = [];
           for (let i = 0; i < frames.length; i += 1) paths.push(await uploadBlob(frames[i], `frame-${i}.jpg`));
-          if (paths.length) added.push({ id: crypto.randomUUID(), name: file.name, kind: "video", coverPath: paths[0], framePaths: paths });
+          if (paths.length) {
+            videoCount += 1;
+            added.push({ id: crypto.randomUUID(), name: file.name, kind: "video", tag: `@video${videoCount}`, role: autoRoleFor("video", videoCount - 1), coverPath: paths[0], framePaths: paths });
+          }
         } else if (file.type.startsWith("image/")) {
           const extension = file.name.split(".").pop() || "jpg";
           const path = await uploadBlob(file, `reference.${extension}`);
-          added.push({ id: crypto.randomUUID(), name: file.name, kind: "image", coverPath: path, framePaths: [path] });
+          imageCount += 1;
+          added.push({ id: crypto.randomUUID(), name: file.name, kind: "image", tag: `@image${imageCount}`, role: autoRoleFor("image", imageCount - 1), coverPath: path, framePaths: [path] });
         }
       }
       if (!added.length) throw new Error("Add an image or video file.");
@@ -204,9 +210,10 @@ export function VideoPlaygroundPage() {
       const missingNotice = prepared.missingFigureNumbers.length
         ? ` Missing: ${prepared.missingFigureNumbers.map((number) => `Figure ${number}`).join(", ")}.`
         : "";
-      toast.success(`${added.length} reference${added.length === 1 ? "" : "s"} added in Figure order.${missingNotice}`, {
+      toast.success(`${added.map((asset) => asset.tag).join(", ")} 태깅 완료 · 역할은 자동 추천되었습니다.${missingNotice}`, {
         duration: prepared.missingFigureNumbers.length ? 7000 : 4000,
       });
+
     } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); }
     finally { setUploading(false); }
   }
