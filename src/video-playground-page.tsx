@@ -152,50 +152,12 @@ export function VideoPlaygroundPage() {
     const timer = window.setInterval(() => void run(), 30_000);
     return () => { active = false; window.clearInterval(timer); };
   }, [checkHealth]);
-  useEffect(() => {
-    if (!tenantId) {
-      setCostSummary({ completedCount: 0, estimatedTotal: 0 });
-      return;
-    }
-    let active = true;
-    const loadCostSummary = async () => {
-      const { data, error } = await supabase
-        .from("video_generations")
-        .select("resolution, duration_seconds, actual_resolution, actual_duration_seconds, options")
-        .eq("tenant_id", tenantId)
-        .eq("status", "done");
-      if (!active || error) return;
-      const estimatedTotal = (data ?? []).reduce((total, item) => {
-        const selectedResolution = item.actual_resolution ?? item.resolution;
-        const safeResolution: SeedanceResolution =
-          selectedResolution === "480p" ||
-          selectedResolution === "1080p" ||
-          selectedResolution === "4K"
-            ? selectedResolution
-            : "720p";
-        const selectedDuration = item.actual_duration_seconds ?? item.duration_seconds ?? 0;
-        const options = item.options && typeof item.options === "object" && !Array.isArray(item.options)
-          ? item.options as Record<string, unknown>
-          : {};
-        const quantity = typeof options.outputQuantity === "number" ? options.outputQuantity : 1;
-        return total + estimateSeedanceVideoCost(safeResolution, Number(selectedDuration)) * quantity;
-      }, 0);
-      setCostSummary({ completedCount: data?.length ?? 0, estimatedTotal });
-    };
-    void loadCostSummary();
-    return () => { active = false; };
-  }, [tenantId, gen.row?.id, gen.row?.status]);
-
   const studyPaths = useMemo(() => assets.flatMap((asset) => asset.framePaths).slice(0, 8), [assets]);
   const firstReference = studyPaths[0] ?? null;
   const hasVideo = assets.some((asset) => asset.kind === "video");
   const readyCount = health?.models.filter((model) => model.status === "available").length ?? 0;
   const seedanceHealth = health?.models.find((model) => model.provider === "seedance") ?? null;
   const busy = uploading || preparing || gen.running;
-  const estimatedCost = useMemo(
-    () => estimateSeedanceVideoCost(resolution, durationSeconds) * outputQuantity,
-    [resolution, durationSeconds, outputQuantity],
-  );
 
   async function uploadBlob(blob: Blob, name: string) {
     if (!tenantId) throw new Error("NO_TENANT");
