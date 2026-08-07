@@ -7,6 +7,8 @@ import { bootstrapTenant } from "@/lib/onboarding.functions";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { LanguageSwitcher } from "@/components/language-switcher";
+
 import { LogOut, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -134,7 +136,10 @@ function AuthenticatedLayout() {
               )}
             </div>
 
+            <LanguageSwitcher />
+
             <DropdownMenu>
+
               <DropdownMenuTrigger asChild>
                 <button
                   className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 pr-3 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/20"
