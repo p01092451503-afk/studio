@@ -7,9 +7,7 @@ import { bootstrapTenant } from "@/lib/onboarding.functions";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { IconTooltip } from "@/components/icon-tooltip";
-import { GlobalSearch } from "@/components/global-search";
-import { Bell, LogOut, User as UserIcon, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -136,18 +134,6 @@ function AuthenticatedLayout() {
               )}
             </div>
 
-            <GlobalSearch />
-
-
-            <IconTooltip label={t("common.notifications")}>
-              <button
-                className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label={t("common.notifications")}
-              >
-                <Bell className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </IconTooltip>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -177,13 +163,6 @@ function AuthenticatedLayout() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="rounded-xl px-2.5 py-2 text-sm"
-                  onSelect={() => navigate({ to: "/projects" })}
-                >
-                  <UserIcon className="mr-2 h-4 w-4" />
-                  {t("header.projects.title")}
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="rounded-xl px-2.5 py-2 text-sm text-destructive focus:text-destructive"
