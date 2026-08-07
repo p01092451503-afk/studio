@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { History, Film } from "lucide-react";
+import { History, Film, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
