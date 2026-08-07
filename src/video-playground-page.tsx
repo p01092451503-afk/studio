@@ -76,6 +76,7 @@ export function VideoPlaygroundPage() {
   const [aspectRatio, setAspectRatio] = useState("9:16");
   const [outputQuantity, setOutputQuantity] = useState(1);
   const [generateAudio, setGenerateAudio] = useState(true);
+  const [rawPromptMode, setRawPromptMode] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -197,20 +198,24 @@ export function VideoPlaygroundPage() {
     try {
       const plainPrompt = removeLegacyMentionMarkers(prompt.trim());
       let brief: ReferenceBrief | null = null;
-      if (studyPaths.length) {
-        brief = await analyze({ data: { imagePaths: studyPaths, intent: plainPrompt, hasVideoFrames: hasVideo } }) as ReferenceBrief;
+      let finalPrompt = plainPrompt;
+      if (!rawPromptMode) {
+        if (studyPaths.length) {
+          brief = await analyze({ data: { imagePaths: studyPaths, intent: plainPrompt, hasVideoFrames: hasVideo } }) as ReferenceBrief;
+        }
+        const composed = await compose({ data: {
+          subject: brief?.subject ?? "", action: plainPrompt,
+          camera: [brief?.camera, brief?.motion].filter(Boolean).join("; "),
+          lighting: brief?.lighting ?? "", style: brief?.style ?? "",
+        } });
+        finalPrompt = composed.finalPrompt;
       }
-      const composed = await compose({ data: {
-        subject: brief?.subject ?? "", action: plainPrompt,
-        camera: [brief?.camera, brief?.motion].filter(Boolean).join("; "),
-        lighting: brief?.lighting ?? "", style: brief?.style ?? "",
-      } });
       await gen.run({
         workLabel: "Playground", provider: "seedance", mode: firstReference ? "i2v" : "t2v",
-        finalPrompt: composed.finalPrompt, negativePrompt: brief?.negative || undefined,
-         rawPrompt: plainPrompt, promptEdited: true, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
+        finalPrompt, negativePrompt: brief?.negative || undefined,
+         rawPrompt: plainPrompt, promptEdited: !rawPromptMode, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
          durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: studyPaths,
-        options: { playground: true, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief,
+        options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief,
           references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, directlySuppliedToModel: true })) },
       });
       toast.success("Your video is now being created.");
@@ -237,7 +242,15 @@ export function VideoPlaygroundPage() {
                 <input type="file" accept="image/*,video/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
               {assets.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{assets.map((asset) => <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30"><SignedImage bucket="character-refs" path={asset.coverPath} alt={asset.name} className="aspect-video w-full object-cover" /><div className="flex items-center gap-2 px-3 py-2">{asset.kind === "video" ? <Video className="h-3.5 w-3.5 text-primary" /> : <ImagePlus className="h-3.5 w-3.5 text-primary" />}<span className="min-w-0 flex-1 truncate text-xs font-semibold">{asset.name}</span><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAssets((current) => current.filter((item) => item.id !== asset.id))} aria-label={`Remove ${asset.name}`}><X className="h-3.5 w-3.5" /></Button></div></div>)}</div>}
             </div>
-            <div data-video-tour="prompt" className="space-y-3"><div className="flex justify-between"><Label htmlFor="video-prompt" className="font-bold">Describe your video</Label><span className="text-xs text-muted-foreground">{prompt.length}/3000</span></div><Textarea id="video-prompt" value={prompt} maxLength={3000} disabled={busy} onChange={(event) => setPrompt(event.target.value)} placeholder="A woman in a red coat walks through a rainy neon street, then turns toward the camera and smiles…" className="min-h-44 resize-y rounded-lg text-base leading-relaxed" /><p className="text-xs text-muted-foreground">Write naturally in English. Uploaded references are used automatically—no tags are needed.</p></div>
+            <div data-video-tour="prompt" className="space-y-3"><div className="flex justify-between"><Label htmlFor="video-prompt" className="font-bold">Describe your video</Label><span className="text-xs text-muted-foreground">{prompt.length}/3000</span></div><Textarea id="video-prompt" value={prompt} maxLength={3000} disabled={busy} onChange={(event) => setPrompt(event.target.value)} placeholder="A woman in a red coat walks through a rainy neon street, then turns toward the camera and smiles…" className="min-h-44 resize-y rounded-lg text-base leading-relaxed" /><p className="text-xs text-muted-foreground">Write naturally in English. Uploaded references are used automatically—no tags are needed.</p>
+              <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/20 p-3">
+                <div className="min-w-0"><p className="text-xs font-bold">원문 그대로 전달 모드</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{rawPromptMode ? "AI 재작성 없이 입력한 프롬프트를 그대로 Seedance에 보냅니다. 참고 이미지·영상은 계속 함께 전달됩니다." : "AI가 참고 자료를 분석해 프롬프트를 다듬어 전달합니다."}</p></div>
+                <div className="flex shrink-0 gap-1 rounded-md border border-border bg-card p-1">
+                  <Button type="button" size="sm" variant={!rawPromptMode ? "default" : "ghost"} className="h-8 px-3 text-xs" disabled={busy} onClick={() => setRawPromptMode(false)}>AI 다듬기</Button>
+                  <Button type="button" size="sm" variant={rawPromptMode ? "default" : "ghost"} className="h-8 px-3 text-xs" disabled={busy} onClick={() => setRawPromptMode(true)}>원문 그대로</Button>
+                </div>
+              </div>
+            </div>
              <div className="space-y-5 rounded-lg border border-border bg-muted/20 p-4">
                <p className="text-xs leading-relaxed text-muted-foreground">Default settings are preset to the most common short-form format: <span className="font-semibold text-foreground">9:16 ratio, 480p resolution, 5 seconds, 1 video, sound on</span>. You can change them below.</p>
                <OptionRow label="Ratio"><div className="grid grid-cols-4 gap-1 sm:grid-cols-7">{["21:9", "16:9", "4:3", "1:1", "3:4", "9:16", "Auto"].map((ratio) => <Button key={ratio} type="button" size="sm" variant={aspectRatio === ratio ? "default" : "ghost"} className="h-9 px-2 text-xs" disabled={busy} onClick={() => setAspectRatio(ratio)}><Monitor className="h-3.5 w-3.5" />{ratio}</Button>)}</div></OptionRow>
