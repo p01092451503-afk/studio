@@ -109,7 +109,7 @@ function QuickLink({
   icon,
   label,
 }: {
-  to: "/projects" | "/characters" | "/history";
+  to: "/projects" | "/history";
   icon: React.ReactNode;
   label: string;
 }) {
