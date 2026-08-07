@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Film, ArrowRight, Users, FolderKanban, History } from "lucide-react";
+import { Film, ArrowRight, FolderKanban, History } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/studio")({
   component: StudioHub,
