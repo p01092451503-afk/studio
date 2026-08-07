@@ -21,42 +21,68 @@ import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { estimateSeedanceVideoCost, type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
 
-type ReferenceRoleId = "character" | "background" | "costume" | "prop" | "pose" | "style" | "motion";
-type MediaAsset = { id: string; name: string; kind: "image" | "video"; tag: string; role: ReferenceRoleId | null; coverPath: string; framePaths: string[] };
+type MediaKind = "image" | "video" | "audio";
+type ReferenceRoleId =
+  | "character" | "background" | "costume" | "prop" | "pose" | "composition" | "style"
+  | "motion" | "camera" | "acting" | "scene_flow"
+  | "dialogue" | "voice" | "music" | "sfx" | "mood"
+  | "other";
+type MediaAsset = { id: string; name: string; kind: MediaKind; tag: string; roles: ReferenceRoleId[]; coverPath: string | null; framePaths: string[] };
 type ValidationState = "valid" | "invalid" | "missing" | "available" | "configured" | "unavailable" | "not_configured" | "unknown";
 type HealthModel = { provider: string; label: string; status: "available" | "unavailable" | "unknown"; detail: string; validation?: { credential: ValidationState; model: ValidationState; endpoint: ValidationState; configuredEndpoint: string | null } };
 type Health = { checkedAt: string; models: HealthModel[] };
 type CostSummary = { completedCount: number; estimatedTotal: number };
 
-const REFERENCE_ROLES: { id: ReferenceRoleId; ko: string; en: string }[] = [
-  { id: "character", ko: "캐릭터", en: "the main character identity (face, hair, body proportions)" },
-  { id: "background", ko: "배경", en: "the background environment and location" },
-  { id: "costume", ko: "의상", en: "the outfit and clothing design" },
-  { id: "prop", ko: "소품", en: "a prop or object appearing in the scene" },
-  { id: "pose", ko: "포즈/구도", en: "the pose, composition and camera framing" },
-  { id: "style", ko: "스타일", en: "the art style, color grading and finish" },
-  { id: "motion", ko: "동작/모션", en: "the motion and action timing" },
+const ROLE_OPTIONS: Record<MediaKind, ReferenceRoleId[]> = {
+  image: ["character", "background", "costume", "pose", "composition", "style", "prop", "other"],
+  video: ["motion", "camera", "acting", "scene_flow", "composition", "style", "other"],
+  audio: ["dialogue", "voice", "music", "sfx", "mood", "other"],
+};
+
+const ROLE_ORDER: ReferenceRoleId[] = [
+  "character", "costume", "prop", "background", "pose", "composition", "style",
+  "motion", "camera", "acting", "scene_flow",
+  "dialogue", "voice", "music", "sfx", "mood", "other",
 ];
 
+const ROLE_SENTENCE: Record<ReferenceRoleId, (tags: string) => string> = {
+  character: (tags) => `Keep the character identity from ${tags} — same face, hair and body proportions.`,
+  costume: (tags) => `Dress the character in the outfit and clothing design shown in ${tags}.`,
+  prop: (tags) => `Include the props and objects shown in ${tags}.`,
+  background: (tags) => `Use ${tags} as the background environment and location.`,
+  pose: (tags) => `Follow the pose and body placement shown in ${tags}.`,
+  composition: (tags) => `Match the framing, shot size and composition of ${tags}.`,
+  style: (tags) => `Match the art style, color grading and finish of ${tags}.`,
+  motion: (tags) => `Follow the movement and action timing of ${tags}.`,
+  camera: (tags) => `Follow the camera movement and blocking of ${tags}.`,
+  acting: (tags) => `Follow the acting, facial expressions and emotion of ${tags}.`,
+  scene_flow: (tags) => `Follow the scene progression and shot order of ${tags}.`,
+  dialogue: (tags) => `Use the spoken lines heard in ${tags}.`,
+  voice: (tags) => `Match the voice tone and delivery of ${tags}.`,
+  music: (tags) => `Match the music and rhythm of ${tags}.`,
+  sfx: (tags) => `Include sound effects like the ones in ${tags}.`,
+  mood: (tags) => `Match the overall mood and atmosphere of ${tags}.`,
+  other: (tags) => `Refer to ${tags} for additional details.`,
+};
 
-function autoRoleFor(kind: "image" | "video", imageIndex: number): ReferenceRoleId {
-  if (kind === "video") return "motion";
-  if (imageIndex === 0) return "character";
-  if (imageIndex === 1) return "background";
-  if (imageIndex === 2) return "costume";
-  return "style";
+function autoRolesFor(kind: MediaKind, indexInKind: number): ReferenceRoleId[] {
+  if (kind === "video") return ["motion", "camera"];
+  if (kind === "audio") return ["mood"];
+  if (indexInKind === 0) return ["character"];
+  if (indexInKind === 1) return ["background"];
+  if (indexInKind === 2) return ["costume"];
+  return ["style"];
 }
 
 function buildRoleDirective(assets: MediaAsset[]) {
-  const tagged = assets.filter((asset) => asset.role);
-  if (!tagged.length) return "";
-  return tagged
-    .map((asset) => {
-      const role = REFERENCE_ROLES.find((item) => item.id === asset.role);
-      return `${asset.tag} is the reference for ${role?.en ?? asset.role}.`;
-    })
-    .join(" ");
+  const sentences: string[] = [];
+  for (const role of ROLE_ORDER) {
+    const tags = assets.filter((asset) => asset.roles.includes(role)).map((asset) => asset.tag);
+    if (tags.length) sentences.push(ROLE_SENTENCE[role](tags.join(" and ")));
+  }
+  return sentences.join(" ");
 }
+
 
 
 function removeLegacyMentionMarkers(value: string) {
