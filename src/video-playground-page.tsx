@@ -21,42 +21,68 @@ import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { estimateSeedanceVideoCost, type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
 
-type ReferenceRoleId = "character" | "background" | "costume" | "prop" | "pose" | "style" | "motion";
-type MediaAsset = { id: string; name: string; kind: "image" | "video"; tag: string; role: ReferenceRoleId | null; coverPath: string; framePaths: string[] };
+type MediaKind = "image" | "video" | "audio";
+type ReferenceRoleId =
+  | "character" | "background" | "costume" | "prop" | "pose" | "composition" | "style"
+  | "motion" | "camera" | "acting" | "scene_flow"
+  | "dialogue" | "voice" | "music" | "sfx" | "mood"
+  | "other";
+type MediaAsset = { id: string; name: string; kind: MediaKind; tag: string; roles: ReferenceRoleId[]; coverPath: string | null; framePaths: string[] };
 type ValidationState = "valid" | "invalid" | "missing" | "available" | "configured" | "unavailable" | "not_configured" | "unknown";
 type HealthModel = { provider: string; label: string; status: "available" | "unavailable" | "unknown"; detail: string; validation?: { credential: ValidationState; model: ValidationState; endpoint: ValidationState; configuredEndpoint: string | null } };
 type Health = { checkedAt: string; models: HealthModel[] };
 type CostSummary = { completedCount: number; estimatedTotal: number };
 
-const REFERENCE_ROLES: { id: ReferenceRoleId; ko: string; en: string }[] = [
-  { id: "character", ko: "캐릭터", en: "the main character identity (face, hair, body proportions)" },
-  { id: "background", ko: "배경", en: "the background environment and location" },
-  { id: "costume", ko: "의상", en: "the outfit and clothing design" },
-  { id: "prop", ko: "소품", en: "a prop or object appearing in the scene" },
-  { id: "pose", ko: "포즈/구도", en: "the pose, composition and camera framing" },
-  { id: "style", ko: "스타일", en: "the art style, color grading and finish" },
-  { id: "motion", ko: "동작/모션", en: "the motion and action timing" },
+const ROLE_OPTIONS: Record<MediaKind, ReferenceRoleId[]> = {
+  image: ["character", "background", "costume", "pose", "composition", "style", "prop", "other"],
+  video: ["motion", "camera", "acting", "scene_flow", "composition", "style", "other"],
+  audio: ["dialogue", "voice", "music", "sfx", "mood", "other"],
+};
+
+const ROLE_ORDER: ReferenceRoleId[] = [
+  "character", "costume", "prop", "background", "pose", "composition", "style",
+  "motion", "camera", "acting", "scene_flow",
+  "dialogue", "voice", "music", "sfx", "mood", "other",
 ];
 
+const ROLE_SENTENCE: Record<ReferenceRoleId, (tags: string) => string> = {
+  character: (tags) => `Keep the character identity from ${tags} — same face, hair and body proportions.`,
+  costume: (tags) => `Dress the character in the outfit and clothing design shown in ${tags}.`,
+  prop: (tags) => `Include the props and objects shown in ${tags}.`,
+  background: (tags) => `Use ${tags} as the background environment and location.`,
+  pose: (tags) => `Follow the pose and body placement shown in ${tags}.`,
+  composition: (tags) => `Match the framing, shot size and composition of ${tags}.`,
+  style: (tags) => `Match the art style, color grading and finish of ${tags}.`,
+  motion: (tags) => `Follow the movement and action timing of ${tags}.`,
+  camera: (tags) => `Follow the camera movement and blocking of ${tags}.`,
+  acting: (tags) => `Follow the acting, facial expressions and emotion of ${tags}.`,
+  scene_flow: (tags) => `Follow the scene progression and shot order of ${tags}.`,
+  dialogue: (tags) => `Use the spoken lines heard in ${tags}.`,
+  voice: (tags) => `Match the voice tone and delivery of ${tags}.`,
+  music: (tags) => `Match the music and rhythm of ${tags}.`,
+  sfx: (tags) => `Include sound effects like the ones in ${tags}.`,
+  mood: (tags) => `Match the overall mood and atmosphere of ${tags}.`,
+  other: (tags) => `Refer to ${tags} for additional details.`,
+};
 
-function autoRoleFor(kind: "image" | "video", imageIndex: number): ReferenceRoleId {
-  if (kind === "video") return "motion";
-  if (imageIndex === 0) return "character";
-  if (imageIndex === 1) return "background";
-  if (imageIndex === 2) return "costume";
-  return "style";
+function autoRolesFor(kind: MediaKind, indexInKind: number): ReferenceRoleId[] {
+  if (kind === "video") return ["motion", "camera"];
+  if (kind === "audio") return ["mood"];
+  if (indexInKind === 0) return ["character"];
+  if (indexInKind === 1) return ["background"];
+  if (indexInKind === 2) return ["costume"];
+  return ["style"];
 }
 
 function buildRoleDirective(assets: MediaAsset[]) {
-  const tagged = assets.filter((asset) => asset.role);
-  if (!tagged.length) return "";
-  return tagged
-    .map((asset) => {
-      const role = REFERENCE_ROLES.find((item) => item.id === asset.role);
-      return `${asset.tag} is the reference for ${role?.en ?? asset.role}.`;
-    })
-    .join(" ");
+  const sentences: string[] = [];
+  for (const role of ROLE_ORDER) {
+    const tags = assets.filter((asset) => asset.roles.includes(role)).map((asset) => asset.tag);
+    if (tags.length) sentences.push(ROLE_SENTENCE[role](tags.join(" and ")));
+  }
+  return sentences.join(" ");
 }
+
 
 
 function removeLegacyMentionMarkers(value: string) {
@@ -187,6 +213,7 @@ export function VideoPlaygroundPage() {
       const prepared = prepareFigureFiles(files);
       let imageCount = assets.filter((asset) => asset.kind === "image").length;
       let videoCount = assets.filter((asset) => asset.kind === "video").length;
+      let audioCount = assets.filter((asset) => asset.kind === "audio").length;
       for (const file of prepared.files) {
         if (assets.length + added.length >= 6) break;
         if (file.type.startsWith("video/")) {
@@ -195,15 +222,19 @@ export function VideoPlaygroundPage() {
           for (let i = 0; i < frames.length; i += 1) paths.push(await uploadBlob(frames[i], `frame-${i}.jpg`));
           if (paths.length) {
             videoCount += 1;
-            added.push({ id: crypto.randomUUID(), name: file.name, kind: "video", tag: `@video${videoCount}`, role: autoRoleFor("video", videoCount - 1), coverPath: paths[0], framePaths: paths });
+            added.push({ id: crypto.randomUUID(), name: file.name, kind: "video", tag: `@video${videoCount}`, roles: autoRolesFor("video", videoCount - 1), coverPath: paths[0], framePaths: paths });
           }
         } else if (file.type.startsWith("image/")) {
           const extension = file.name.split(".").pop() || "jpg";
           const path = await uploadBlob(file, `reference.${extension}`);
           imageCount += 1;
-          added.push({ id: crypto.randomUUID(), name: file.name, kind: "image", tag: `@image${imageCount}`, role: autoRoleFor("image", imageCount - 1), coverPath: path, framePaths: [path] });
+          added.push({ id: crypto.randomUUID(), name: file.name, kind: "image", tag: `@image${imageCount}`, roles: autoRolesFor("image", imageCount - 1), coverPath: path, framePaths: [path] });
+        } else if (file.type.startsWith("audio/")) {
+          audioCount += 1;
+          added.push({ id: crypto.randomUUID(), name: file.name, kind: "audio", tag: `@audio${audioCount}`, roles: autoRolesFor("audio", audioCount - 1), coverPath: null, framePaths: [] });
         }
       }
+
       if (!added.length) throw new Error(t("playground.toast_no_media"));
       setAssets((current) => [...current, ...added].slice(0, 6));
       const missingNotice = prepared.missingFigureNumbers.length
@@ -258,7 +289,7 @@ export function VideoPlaygroundPage() {
          rawPrompt: plainPrompt, promptEdited: !rawPromptMode, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
          durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: studyPaths,
         options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief, referenceRoleDirective: roleDirective,
-          references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, tag: asset.tag, role: asset.role, directlySuppliedToModel: true })) },
+          references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, tag: asset.tag, roles: asset.roles, directlySuppliedToModel: asset.kind !== "audio" })) },
       });
 
       toast.success(t("playground.toast_started"));
@@ -282,18 +313,26 @@ export function VideoPlaygroundPage() {
           <div className="space-y-6 p-6">
             <div data-video-tour="references" className="space-y-3"><div className="flex items-center justify-between"><Label className="font-bold">{t("playground.references_label")}</Label>{assets.length > 0 && <Button variant="ghost" size="sm" onClick={() => setAssets([])}><Trash2 className="h-4 w-4" /> {t("playground.clear")}</Button>}</div>
               <label onDragEnter={handleReferenceDrag} onDragOver={handleReferenceDrag} onDragLeave={handleReferenceDrag} onDrop={handleReferenceDrop} className={`flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-5 text-center transition-colors ${dragActive ? "border-primary bg-primary-soft" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-primary-soft"}`}>{uploading ? <Loader2 className="h-7 w-7 animate-spin text-primary" /> : <ImagePlus className="h-7 w-7 text-primary" />}<span className="text-sm font-bold">{uploading ? t("playground.uploading") : dragActive ? t("playground.drop_files") : t("playground.add_files")}</span><span className="text-xs text-muted-foreground">{t("playground.files_hint")}</span>
-                <input type="file" accept="image/*,video/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
+                <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
               {assets.length > 0 && <div className="space-y-3">
-                <p className="text-xs leading-relaxed text-muted-foreground">{t("playground.tag_hint_1")} <span className="font-semibold text-foreground">@image1 · @video1</span> {t("playground.tag_hint_2")}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{t("playground.tag_hint_1")} <span className="font-semibold text-foreground">@image1 · @video1 · @audio1</span> {t("playground.tag_hint_2")}</p>
                 <div className="grid gap-3 sm:grid-cols-2">{assets.map((asset) => <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30">
-                  <SignedImage bucket="character-refs" path={asset.coverPath} alt={asset.name} className="aspect-video w-full object-cover" />
-                  <div className="flex items-center gap-2 px-3 py-2">{asset.kind === "video" ? <Video className="h-3.5 w-3.5 text-primary" /> : <ImagePlus className="h-3.5 w-3.5 text-primary" />}<span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-bold text-primary">{asset.tag}</span><span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{asset.name}</span><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAssets((current) => current.filter((item) => item.id !== asset.id))} aria-label={t("playground.remove", { name: asset.name })}><X className="h-3.5 w-3.5" /></Button></div>
+                  {asset.coverPath
+                    ? <SignedImage bucket="character-refs" path={asset.coverPath} alt={asset.name} className="aspect-video w-full object-cover" />
+                    : <div className="flex aspect-video w-full items-center justify-center bg-primary-soft"><Volume2 className="h-8 w-8 text-primary" /></div>}
+                  <div className="flex items-center gap-2 px-3 py-2">{asset.kind === "video" ? <Video className="h-3.5 w-3.5 text-primary" /> : asset.kind === "audio" ? <Volume2 className="h-3.5 w-3.5 text-primary" /> : <ImagePlus className="h-3.5 w-3.5 text-primary" />}<span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-bold text-primary">{asset.tag}</span><span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{asset.name}</span><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAssets((current) => current.filter((item) => item.id !== asset.id))} aria-label={t("playground.remove", { name: asset.name })}><X className="h-3.5 w-3.5" /></Button></div>
                   <div className="border-t border-border px-3 py-2">
                     <p className="text-xs font-bold">{t("playground.role_question", { tag: asset.tag })}</p>
-                    <div role="radiogroup" aria-label={t("playground.role_group", { tag: asset.tag })} className="mt-2 flex flex-wrap gap-1">{REFERENCE_ROLES.map((role) => <button key={role.id} type="button" role="radio" aria-checked={asset.role === role.id} disabled={busy} onClick={() => setAssets((current) => current.map((item) => item.id === asset.id ? { ...item, role: role.id } : item))} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${asset.role === role.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}>{t(`playground.roles.${role.id}`)}</button>)}</div>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">{t("playground.role_multi_hint")}</p>
+                    <div role="group" aria-label={t("playground.role_group", { tag: asset.tag })} className="mt-2 flex flex-wrap gap-1">{ROLE_OPTIONS[asset.kind].map((role) => { const active = asset.roles.includes(role); return <button key={role} type="button" role="checkbox" aria-checked={active} disabled={busy} onClick={() => setAssets((current) => current.map((item) => item.id === asset.id ? { ...item, roles: active ? item.roles.filter((value) => value !== role) : [...item.roles, role] } : item))} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}>{t(`playground.roles.${role}`)}</button>; })}</div>
                   </div>
                 </div>)}</div>
+                {buildRoleDirective(assets) && <div className="rounded-lg border border-border bg-muted/20 p-3">
+                  <p className="text-xs font-bold">{t("playground.auto_directive_title")}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">{buildRoleDirective(assets)}</p>
+                </div>}
               </div>}
+
 
             </div>
             <div data-video-tour="prompt" className="space-y-3"><div className="flex justify-between"><Label htmlFor="video-prompt" className="font-bold">{t("playground.describe_label")}</Label><span className="text-xs text-muted-foreground">{prompt.length}/3000</span></div><Textarea id="video-prompt" value={prompt} maxLength={3000} disabled={busy} onChange={(event) => setPrompt(event.target.value)} placeholder={t("playground.describe_placeholder")} className="min-h-44 resize-y rounded-lg text-base leading-relaxed" /><p className="text-xs text-muted-foreground">{t("playground.describe_hint")}</p>
