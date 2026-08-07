@@ -144,10 +144,10 @@ export function useVideoGeneration(tenantId: string | null) {
       setCurrentId(res.videoGenerationId);
       return res;
     } catch (e) {
-      if (recoverStaleServerFunction(e)) return;
-      setError(e instanceof Error ? e.message : String(e));
       setRunning(false);
       writeStoredId(null);
+      if (recoverStaleServerFunction(e)) return;
+      setError(e instanceof Error ? e.message : String(e));
       throw e;
     }
   }
