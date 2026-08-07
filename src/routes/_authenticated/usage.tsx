@@ -33,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/usage")({
 type Row = {
   id: string;
   status: string;
+  work_label: string | null;
   created_at: string;
   resolution: string | null;
   actual_resolution: string | null;
@@ -66,7 +67,7 @@ function UsagePage() {
       const { data, error } = await supabase
         .from("video_generations")
         .select(
-          "id, status, created_at, resolution, actual_resolution, duration_seconds, actual_duration_seconds",
+          "id, status, work_label, created_at, resolution, actual_resolution, duration_seconds, actual_duration_seconds",
         )
         .order("created_at", { ascending: false })
         .limit(1000);
@@ -126,7 +127,17 @@ function UsagePage() {
       };
     }).filter((x) => x.count > 0);
 
+    const items = billable.map((r) => ({
+      id: r.id,
+      created_at: r.created_at,
+      label: r.work_label ?? "-",
+      res: normalizeResolution(r.actual_resolution ?? r.resolution),
+      seconds: r.actual_duration_seconds ?? r.duration_seconds ?? 5,
+      cost: cost(r),
+    }));
+
     return {
+      items,
       total: list.length,
       succeeded: billable.length,
       failed: list.filter((r) => r.status === "error" || r.status === "failed").length,
@@ -199,7 +210,59 @@ function UsagePage() {
             )}
           </section>
 
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
+              {t("usage.per_item")}
+            </h2>
+            {stats.items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("usage.empty")}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <th className="py-2 pr-3 font-medium">{t("usage.col_date")}</th>
+                      <th className="py-2 pr-3 font-medium">{t("usage.col_label")}</th>
+                      <th className="py-2 pr-3 font-medium">{t("usage.col_resolution")}</th>
+                      <th className="py-2 pr-3 font-medium">{t("usage.col_duration")}</th>
+                      <th className="py-2 text-right font-medium">{t("usage.col_cost")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {stats.items.map((it) => (
+                      <tr key={it.id}>
+                        <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
+                          {new Date(it.created_at).toLocaleString()}
+                        </td>
+                        <td className="py-2 pr-3 text-foreground">{it.label}</td>
+                        <td className="py-2 pr-3 text-muted-foreground">{it.res}</td>
+                        <td className="py-2 pr-3 text-muted-foreground">
+                          {Math.round(Number(it.seconds))}s
+                        </td>
+                        <td className="py-2 text-right font-semibold text-foreground">
+                          {usd(it.cost)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border">
+                      <td className="py-2 pr-3 font-semibold text-foreground" colSpan={4}>
+                        {t("usage.sum")}
+                      </td>
+                      <td className="py-2 text-right text-base font-bold text-primary">
+                        {usd(stats.totalCost)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </section>
+
           <p className="text-xs text-muted-foreground">{t("usage.disclaimer")}</p>
+          <p className="text-xs text-muted-foreground">{t("usage.rate_note")}</p>
+
         </div>
       )}
     </main>
