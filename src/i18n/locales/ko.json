@@ -1,6 +1,6 @@
 {
   "brand": {
-    "name": "웹툰 영상 생성기",
+    "name": "Webtoon Video Generator",
     "tagline": "AI 웹툰 스튜디오"
   },
   "common": {
@@ -90,7 +90,7 @@
   "auth": {
     "checking_session": "세션 확인 중…",
     "preparing_workspace": "워크스페이스를 준비하는 중…",
-    "welcome": "웹툰 영상 생성기",
+    "welcome": "Webtoon Video Generator",
     "sign_in_hint": "이메일로 로그인하세요",
     "sign_up_hint": "새 계정을 만드세요",
     "tab_sign_in": "로그인",
