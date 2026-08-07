@@ -284,6 +284,73 @@ function UsagePage() {
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">
+                {t("usage.compare_title")}
+              </h2>
+              <button
+                type="button"
+                onClick={measureStorage}
+                disabled={measuring || !results?.length}
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                {measuring ? t("usage.measuring") : t("usage.measure")}
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="py-2 pr-3 font-medium">{t("usage.metric")}</th>
+                    <th className="py-2 pr-3 text-right font-medium">
+                      {t("usage.estimated")}
+                    </th>
+                    <th className="py-2 pr-3 text-right font-medium">{t("usage.actual")}</th>
+                    <th className="py-2 text-right font-medium">{t("usage.diff")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  <CompareRow
+                    label={t("usage.metric_count")}
+                    est={`${stats.succeeded}`}
+                    act={`${actual.count}`}
+                    diff={`${actual.count - stats.succeeded > 0 ? "+" : ""}${actual.count - stats.succeeded}`}
+                  />
+                  <CompareRow
+                    label={t("usage.metric_seconds")}
+                    est={`${Math.round(stats.totalSeconds)}s`}
+                    act={`${Math.round(actual.seconds)}s`}
+                    diff={`${actual.seconds - stats.totalSeconds >= 0 ? "+" : ""}${Math.round(actual.seconds - stats.totalSeconds)}s`}
+                  />
+                  <CompareRow
+                    label={t("usage.metric_storage")}
+                    est={`${stats.storageGb.toFixed(2)} GB`}
+                    act={
+                      measured
+                        ? `${gb(measured.bytes).toFixed(2)} GB (${measured.files})`
+                        : t("usage.not_measured")
+                    }
+                    diff={
+                      measured
+                        ? `${gb(measured.bytes) - stats.storageGb >= 0 ? "+" : ""}${(gb(measured.bytes) - stats.storageGb).toFixed(2)} GB`
+                        : "-"
+                    }
+                  />
+                  <CompareRow
+                    label={t("usage.metric_cost")}
+                    est={usd(stats.totalCost)}
+                    act={usd(actual.cost)}
+                    diff={`${actual.cost - stats.totalCost >= 0 ? "+" : ""}${usd(actual.cost - stats.totalCost).replace("$-", "-$")}`}
+                  />
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">{t("usage.compare_note")}</p>
+          </section>
+
+
+
+          <section className="rounded-2xl border border-border bg-card p-5">
             <h2 className="mb-3 text-sm font-semibold text-foreground">
               {t("usage.by_month")}
             </h2>
