@@ -81,6 +81,10 @@
     "video": {
       "title": "Video studio",
       "sub": "AI video generation"
+    },
+    "usage": {
+      "title": "Usage & cost",
+      "sub": "Estimates vs actual usage"
     }
   },
   "auth": {
