@@ -514,7 +514,7 @@
     "other_title": "Other estimated costs",
     "storage": "Storage\u00a0",
     "storage_hint": "Monthly estimate from generated video size",
-    "gateway": "Lovable AI Gateway",
+    "gateway": "AI Gateway",
     "gateway_value": "Not used",
     "gateway_hint": "Video generation calls BytePlus ARK directly, so no Gateway cost is incurred.",
     "grand_total": "Monthly total (video + storage)",
