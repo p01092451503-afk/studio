@@ -55,6 +55,18 @@ function usd(n: number) {
   return `$${n.toFixed(2)}`;
 }
 
+/** Rough encoded bitrate (MB per second of video) used to estimate stored size. */
+const MB_PER_SECOND: Record<SeedanceResolution, number> = {
+  "480p": 0.35,
+  "720p": 0.75,
+  "1080p": 1.6,
+  "4K": 5.5,
+};
+
+/** Lovable Cloud / Supabase storage rate, USD per GB per month. */
+const STORAGE_USD_PER_GB_MONTH = 0.021;
+
+
 function UsagePage() {
   const { t } = useTranslation();
   const { tenantId } = useTenant();
