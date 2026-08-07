@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Users, Sparkles, History, FolderKanban, Search, LayoutGrid, Film } from "lucide-react";
+import { History, Film } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -33,19 +33,8 @@ export function AppSidebar() {
 
   const groups = [
     {
-      label: t("sidebar.group_assets"),
-      items: [
-        { title: t("sidebar.projects"), url: "/projects", icon: FolderKanban },
-        { title: t("sidebar.characters"), url: "/characters", icon: Users },
-      ],
-    },
-    {
       label: t("sidebar.group_studio"),
-      items: [
-        { title: t("sidebar.hub"), url: "/studio", icon: LayoutGrid },
-
-        { title: t("sidebar.video"), url: "/video", icon: Film },
-      ],
+      items: [{ title: t("sidebar.video"), url: "/video", icon: Film }],
     },
     {
       label: t("sidebar.group_records"),
@@ -57,15 +46,6 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
-      {collapsed && (
-        <div className="flex items-center justify-center px-2 pt-2">
-          <SidebarTrigger
-            aria-label={t("common.toggle_sidebar")}
-            className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-          />
-        </div>
-      )}
-
       <SidebarHeader className="border-none pt-3 pb-2">
         <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2 px-2"}`}>
           <Link
@@ -81,22 +61,6 @@ export function AppSidebar() {
           </Link>
         </div>
 
-        {!collapsed && (
-          <div className="mt-5 flex items-center gap-2 px-2">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={t("common.search_placeholder")}
-                className="h-10 w-full rounded-2xl border border-border bg-card pl-10 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/15"
-              />
-            </div>
-            <SidebarTrigger
-              aria-label={t("common.toggle_sidebar")}
-              className="h-10 w-10 shrink-0 rounded-2xl border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-            />
-          </div>
-        )}
       </SidebarHeader>
 
 
