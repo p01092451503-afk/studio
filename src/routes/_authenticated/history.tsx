@@ -116,9 +116,36 @@ function useVideoHistory(tenantId: string | null) {
         setRows([]);
         return;
       }
+      // 30분 이상 running/queued 로 남은 항목은 중단된 작업으로 보고 실패 처리한다.
+      const STALE_MS = 30 * 60 * 1000;
+      const now = Date.now();
+      const staleIds = (data ?? [])
+        .filter(
+          (r: any) =>
+            (r.status === "running" || r.status === "queued") &&
+            now - new Date(r.created_at).getTime() > STALE_MS,
+        )
+        .map((r: any) => r.id);
+
+      if (staleIds.length > 0) {
+        await supabase
+          .from("video_generations")
+          .update({
+            status: "error",
+            error_message:
+              "STALE_TIMEOUT: 30분 이상 진행 상태로 남아 있어 중단된 작업으로 처리했습니다. (브라우저 종료 또는 공급자 응답 지연)",
+            completed_at: new Date().toISOString(),
+          })
+          .in("id", staleIds);
+      }
+
       setRows(
         (data ?? []).map((r: any) => ({
           ...r,
+          status: staleIds.includes(r.id) ? "error" : r.status,
+          error_message: staleIds.includes(r.id)
+            ? "STALE_TIMEOUT: 30분 이상 진행 상태로 남아 있어 중단된 작업으로 처리했습니다. (브라우저 종료 또는 공급자 응답 지연)"
+            : r.error_message,
           results: (r.video_results ?? []).sort((a: any, b: any) => a.seq - b.seq),
         })),
       );
