@@ -213,6 +213,7 @@ export function VideoPlaygroundPage() {
       const prepared = prepareFigureFiles(files);
       let imageCount = assets.filter((asset) => asset.kind === "image").length;
       let videoCount = assets.filter((asset) => asset.kind === "video").length;
+      let audioCount = assets.filter((asset) => asset.kind === "audio").length;
       for (const file of prepared.files) {
         if (assets.length + added.length >= 6) break;
         if (file.type.startsWith("video/")) {
@@ -221,15 +222,19 @@ export function VideoPlaygroundPage() {
           for (let i = 0; i < frames.length; i += 1) paths.push(await uploadBlob(frames[i], `frame-${i}.jpg`));
           if (paths.length) {
             videoCount += 1;
-            added.push({ id: crypto.randomUUID(), name: file.name, kind: "video", tag: `@video${videoCount}`, role: autoRoleFor("video", videoCount - 1), coverPath: paths[0], framePaths: paths });
+            added.push({ id: crypto.randomUUID(), name: file.name, kind: "video", tag: `@video${videoCount}`, roles: autoRolesFor("video", videoCount - 1), coverPath: paths[0], framePaths: paths });
           }
         } else if (file.type.startsWith("image/")) {
           const extension = file.name.split(".").pop() || "jpg";
           const path = await uploadBlob(file, `reference.${extension}`);
           imageCount += 1;
-          added.push({ id: crypto.randomUUID(), name: file.name, kind: "image", tag: `@image${imageCount}`, role: autoRoleFor("image", imageCount - 1), coverPath: path, framePaths: [path] });
+          added.push({ id: crypto.randomUUID(), name: file.name, kind: "image", tag: `@image${imageCount}`, roles: autoRolesFor("image", imageCount - 1), coverPath: path, framePaths: [path] });
+        } else if (file.type.startsWith("audio/")) {
+          audioCount += 1;
+          added.push({ id: crypto.randomUUID(), name: file.name, kind: "audio", tag: `@audio${audioCount}`, roles: autoRolesFor("audio", audioCount - 1), coverPath: null, framePaths: [] });
         }
       }
+
       if (!added.length) throw new Error(t("playground.toast_no_media"));
       setAssets((current) => [...current, ...added].slice(0, 6));
       const missingNotice = prepared.missingFigureNumbers.length
