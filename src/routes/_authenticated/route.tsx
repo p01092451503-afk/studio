@@ -7,7 +7,6 @@ import { bootstrapTenant } from "@/lib/onboarding.functions";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { IconTooltip } from "@/components/icon-tooltip";
 import { LogOut, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
