@@ -33,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/usage")({
 type Row = {
   id: string;
   status: string;
+  work_label: string | null;
   created_at: string;
   resolution: string | null;
   actual_resolution: string | null;
@@ -66,7 +67,7 @@ function UsagePage() {
       const { data, error } = await supabase
         .from("video_generations")
         .select(
-          "id, status, created_at, resolution, actual_resolution, duration_seconds, actual_duration_seconds",
+          "id, status, work_label, created_at, resolution, actual_resolution, duration_seconds, actual_duration_seconds",
         )
         .order("created_at", { ascending: false })
         .limit(1000);
