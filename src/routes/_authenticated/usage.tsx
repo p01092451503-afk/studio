@@ -126,7 +126,17 @@ function UsagePage() {
       };
     }).filter((x) => x.count > 0);
 
+    const items = billable.map((r) => ({
+      id: r.id,
+      created_at: r.created_at,
+      label: r.work_label ?? "-",
+      res: normalizeResolution(r.actual_resolution ?? r.resolution),
+      seconds: r.actual_duration_seconds ?? r.duration_seconds ?? 5,
+      cost: cost(r),
+    }));
+
     return {
+      items,
       total: list.length,
       succeeded: billable.length,
       failed: list.filter((r) => r.status === "error" || r.status === "failed").length,
