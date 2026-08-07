@@ -67,34 +67,99 @@ const MB_PER_SECOND: Record<SeedanceResolution, number> = {
 const STORAGE_USD_PER_GB_MONTH = 0.021;
 
 
+type ResultRow = {
+  video_generation_id: string;
+  storage_path: string;
+  duration_seconds: number | null;
+  width: number | null;
+  height: number | null;
+};
+
+function resolutionFromHeight(h: number | null): SeedanceResolution {
+  if (!h) return "720p";
+  if (h >= 1800) return "4K";
+  if (h >= 1000) return "1080p";
+  if (h <= 520) return "480p";
+  return "720p";
+}
+
+function gb(bytes: number) {
+  return bytes / 1024 / 1024 / 1024;
+}
+
 function UsagePage() {
   const { t } = useTranslation();
   const { tenantId } = useTenant();
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [results, setResults] = useState<ResultRow[] | null>(null);
+  const [measured, setMeasured] = useState<{ files: number; bytes: number } | null>(null);
+  const [measuring, setMeasuring] = useState(false);
 
   useEffect(() => {
     if (!tenantId) return;
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from("video_generations")
-        .select(
-          "id, status, work_label, created_at, resolution, actual_resolution, duration_seconds, actual_duration_seconds",
-        )
-        .order("created_at", { ascending: false })
-        .limit(1000);
+      const [gen, res] = await Promise.all([
+        supabase
+          .from("video_generations")
+          .select(
+            "id, status, work_label, created_at, resolution, actual_resolution, duration_seconds, actual_duration_seconds",
+          )
+          .order("created_at", { ascending: false })
+          .limit(1000),
+        supabase
+          .from("video_results")
+          .select("video_generation_id, storage_path, duration_seconds, width, height")
+          .limit(2000),
+      ]);
       if (cancelled) return;
-      if (error) {
-        toast.error(error.message);
+      if (gen.error) {
+        toast.error(gen.error.message);
         setRows([]);
-        return;
+      } else {
+        setRows((gen.data ?? []) as Row[]);
       }
-      setRows((data ?? []) as Row[]);
+      setResults(res.error ? [] : ((res.data ?? []) as ResultRow[]));
     })();
     return () => {
       cancelled = true;
     };
   }, [tenantId]);
+
+  async function measureStorage() {
+    if (!results?.length) return;
+    setMeasuring(true);
+    try {
+      const dirs = [
+        ...new Set(results.map((r) => r.storage_path.split("/").slice(0, -1).join("/"))),
+      ].slice(0, 300);
+      let bytes = 0;
+      let files = 0;
+      for (let i = 0; i < dirs.length; i += 6) {
+        const chunk = dirs.slice(i, i + 6);
+        const lists = await Promise.all(
+          chunk.map((d) =>
+            supabase.storage.from("generation-outputs").list(d, { limit: 100 }),
+          ),
+        );
+        for (const l of lists) {
+          for (const f of l.data ?? []) {
+            const size = (f.metadata as { size?: number } | null)?.size ?? 0;
+            if (size > 0) {
+              bytes += size;
+              files += 1;
+            }
+          }
+        }
+      }
+      setMeasured({ files, bytes });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setMeasuring(false);
+    }
+  }
+
 
   const stats = useMemo(() => {
     const list = rows ?? [];
@@ -174,6 +239,29 @@ function UsagePage() {
 
   }, [rows]);
 
+  const actual = useMemo(() => {
+    const list = results ?? [];
+    const seconds = list.reduce((s, r) => s + Number(r.duration_seconds ?? 0), 0);
+    const cost = list.reduce(
+      (s, r) =>
+        s +
+        estimateSeedanceVideoCost(
+          resolutionFromHeight(r.height),
+          Number(r.duration_seconds ?? 5),
+        ),
+      0,
+    );
+    const estGb =
+      list.reduce(
+        (s, r) =>
+          s +
+          MB_PER_SECOND[resolutionFromHeight(r.height)] * Number(r.duration_seconds ?? 5),
+        0,
+      ) / 1024;
+    return { count: list.length, seconds, cost, estGb };
+  }, [results]);
+
+
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-8">
       <header className="mb-6">
@@ -194,6 +282,73 @@ function UsagePage() {
               hint={`${Math.round(stats.totalSeconds)}s`}
             />
           </section>
+
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">
+                {t("usage.compare_title")}
+              </h2>
+              <button
+                type="button"
+                onClick={measureStorage}
+                disabled={measuring || !results?.length}
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                {measuring ? t("usage.measuring") : t("usage.measure")}
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="py-2 pr-3 font-medium">{t("usage.metric")}</th>
+                    <th className="py-2 pr-3 text-right font-medium">
+                      {t("usage.estimated")}
+                    </th>
+                    <th className="py-2 pr-3 text-right font-medium">{t("usage.actual")}</th>
+                    <th className="py-2 text-right font-medium">{t("usage.diff")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  <CompareRow
+                    label={t("usage.metric_count")}
+                    est={`${stats.succeeded}`}
+                    act={`${actual.count}`}
+                    diff={`${actual.count - stats.succeeded > 0 ? "+" : ""}${actual.count - stats.succeeded}`}
+                  />
+                  <CompareRow
+                    label={t("usage.metric_seconds")}
+                    est={`${Math.round(stats.totalSeconds)}s`}
+                    act={`${Math.round(actual.seconds)}s`}
+                    diff={`${actual.seconds - stats.totalSeconds >= 0 ? "+" : ""}${Math.round(actual.seconds - stats.totalSeconds)}s`}
+                  />
+                  <CompareRow
+                    label={t("usage.metric_storage")}
+                    est={`${stats.storageGb.toFixed(2)} GB`}
+                    act={
+                      measured
+                        ? `${gb(measured.bytes).toFixed(2)} GB (${measured.files})`
+                        : t("usage.not_measured")
+                    }
+                    diff={
+                      measured
+                        ? `${gb(measured.bytes) - stats.storageGb >= 0 ? "+" : ""}${(gb(measured.bytes) - stats.storageGb).toFixed(2)} GB`
+                        : "-"
+                    }
+                  />
+                  <CompareRow
+                    label={t("usage.metric_cost")}
+                    est={usd(stats.totalCost)}
+                    act={usd(actual.cost)}
+                    diff={`${actual.cost - stats.totalCost >= 0 ? "+" : ""}${usd(actual.cost - stats.totalCost).replace("$-", "-$")}`}
+                  />
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">{t("usage.compare_note")}</p>
+          </section>
+
+
 
           <section className="rounded-2xl border border-border bg-card p-5">
             <h2 className="mb-3 text-sm font-semibold text-foreground">
@@ -343,5 +498,26 @@ function Card({ label, value, hint }: { label: string; value: string; hint?: str
       <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+function CompareRow({
+  label,
+  est,
+  act,
+  diff,
+}: {
+  label: string;
+  est: string;
+  act: string;
+  diff: string;
+}) {
+  return (
+    <tr>
+      <td className="py-2 pr-3 text-muted-foreground">{label}</td>
+      <td className="py-2 pr-3 text-right text-foreground">{est}</td>
+      <td className="py-2 pr-3 text-right font-semibold text-foreground">{act}</td>
+      <td className="py-2 text-right text-muted-foreground">{diff}</td>
+    </tr>
   );
 }

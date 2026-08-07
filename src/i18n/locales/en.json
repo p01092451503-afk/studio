@@ -514,6 +514,19 @@
     "gateway_value": "Not used",
     "gateway_hint": "Video generation calls BytePlus ARK directly, so no Gateway cost is incurred.",
     "grand_total": "Monthly total (video + storage)",
-    "storage_note": "Storage size is estimated from resolution and duration bitrates; uploaded reference files are excluded. Rate applied: $0.021 per GB-month."
+    "storage_note": "Storage size is estimated from resolution and duration bitrates; uploaded reference files are excluded. Rate applied: $0.021 per GB-month.",
+    "compare_title": "Estimate vs actual usage",
+    "estimated": "Estimated",
+    "actual": "Actual",
+    "diff": "Diff",
+    "metric": "Metric",
+    "metric_count": "Generations",
+    "metric_seconds": "Total duration",
+    "metric_storage": "Storage",
+    "metric_cost": "Generation cost",
+    "measure": "Measure actual size",
+    "measuring": "Measuring…",
+    "not_measured": "Not measured",
+    "compare_note": "Estimates use requested values; actuals use measured values from stored results. Actual storage size is read from storage only when you press “Measure actual size”."
   }
 }
