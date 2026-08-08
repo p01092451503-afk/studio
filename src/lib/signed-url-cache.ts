@@ -1,4 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
+import {
+  markCacheHit,
+  markCacheMiss,
+  markInflightJoin,
+  markSignBatch,
+} from "@/lib/media-perf";
+
 
 /**
  * 서명 URL 발급을 버킷 단위로 묶어서(batch) 한 번에 요청하고, 만료 전까지 캐시한다.
@@ -38,10 +45,14 @@ async function flush(bucket: string, ttl: number) {
 
   await ensureSession();
   const paths = [...new Set(items.map((i) => i.path))];
+  const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const elapsed = () =>
+    (typeof performance !== "undefined" ? performance.now() : Date.now()) - startedAt;
 
   try {
     const { data, error } = await supabase.storage.from(bucket).createSignedUrls(paths, ttl);
     if (error) throw error;
+    markSignBatch(paths.length, elapsed());
     const byPath = new Map<string, string>();
     for (const row of data ?? []) {
       if (row.path && row.signedUrl) byPath.set(row.path, row.signedUrl);
@@ -59,6 +70,7 @@ async function flush(bucket: string, ttl: number) {
       }
     }
   } catch (e) {
+    markSignBatch(paths.length, elapsed(), true);
     const err = e instanceof Error ? e : new Error("SIGNED_URL_FAILED");
     for (const item of items) item.reject(err);
   }
@@ -67,10 +79,19 @@ async function flush(bucket: string, ttl: number) {
 export function getSignedUrl(bucket: string, path: string, ttl: number): Promise<string> {
   const cacheKey = `${bucket}::${ttl}::${path}`;
   const hit = cache.get(cacheKey);
-  if (hit && hit.expiresAt > Date.now()) return Promise.resolve(hit.url);
+  if (hit && hit.expiresAt > Date.now()) {
+    markCacheHit();
+    return Promise.resolve(hit.url);
+  }
 
   const inflight = pending.get(cacheKey);
-  if (inflight) return inflight;
+  if (inflight) {
+    markInflightJoin();
+    return inflight;
+  }
+
+  markCacheMiss();
+
 
   const promise = new Promise<string>((resolve, reject) => {
     const queueKey = `${bucket}::${ttl}`;
