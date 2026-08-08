@@ -504,6 +504,7 @@
     "disclaimer": "Estimates based on BytePlus Seedance 2.0 published rates; actual billing may differ. Failed generations are excluded.",
     "nav": "Usage & cost",
     "per_item": "Cost per generation",
+    "per_item_summary": "{{count}} items · {{cost}}",
     "col_date": "Created",
     "col_label": "Job",
     "col_resolution": "Resolution",

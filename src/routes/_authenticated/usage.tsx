@@ -5,6 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   estimateSeedanceVideoCost,
   type SeedanceResolution,
 } from "@/lib/video-constants";
@@ -96,6 +101,7 @@ function UsagePage() {
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [measured, setMeasured] = useState<{ files: number; bytes: number } | null>(null);
   const [measuring, setMeasuring] = useState(false);
+  const [perItemOpen, setPerItemOpen] = useState(false);
 
   useEffect(() => {
     if (!tenantId) return;
@@ -394,53 +400,77 @@ function UsagePage() {
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-5">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">
-              {t("usage.per_item")}
-            </h2>
-            {stats.items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("usage.empty")}</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="py-2 pr-3 font-medium">{t("usage.col_date")}</th>
-                      <th className="py-2 pr-3 font-medium">{t("usage.col_label")}</th>
-                      <th className="py-2 pr-3 font-medium">{t("usage.col_resolution")}</th>
-                      <th className="py-2 pr-3 font-medium">{t("usage.col_duration")}</th>
-                      <th className="py-2 text-right font-medium">{t("usage.col_cost")}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {stats.items.map((it) => (
-                      <tr key={it.id}>
-                        <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
-                          {new Date(it.created_at).toLocaleString()}
-                        </td>
-                        <td className="py-2 pr-3 text-foreground">{it.label}</td>
-                        <td className="py-2 pr-3 text-muted-foreground">{it.res}</td>
-                        <td className="py-2 pr-3 text-muted-foreground">
-                          {Math.round(Number(it.seconds))}s
-                        </td>
-                        <td className="py-2 text-right font-semibold text-foreground">
-                          {usd(it.cost)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t border-border">
-                      <td className="py-2 pr-3 font-semibold text-foreground" colSpan={4}>
-                        {t("usage.sum")}
-                      </td>
-                      <td className="py-2 text-right text-base font-bold text-primary">
-                        {usd(stats.totalCost)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
+            <Collapsible open={perItemOpen} onOpenChange={setPerItemOpen}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">
+                    {t("usage.per_item")}
+                  </h2>
+                  {!perItemOpen && stats.items.length > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t("usage.per_item_summary", {
+                        count: stats.items.length,
+                        cost: usd(stats.totalCost),
+                      })}
+                    </p>
+                  )}
+                </div>
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                  >
+                    {perItemOpen ? t("common.close") : t("common.open")}
+                  </button>
+                </CollapsibleTrigger>
               </div>
-            )}
+              <CollapsibleContent>
+                {stats.items.length === 0 ? (
+                  <p className="mt-3 text-sm text-muted-foreground">{t("usage.empty")}</p>
+                ) : (
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                          <th className="py-2 pr-3 font-medium">{t("usage.col_date")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("usage.col_label")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("usage.col_resolution")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("usage.col_duration")}</th>
+                          <th className="py-2 text-right font-medium">{t("usage.col_cost")}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {stats.items.map((it) => (
+                          <tr key={it.id}>
+                            <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
+                              {new Date(it.created_at).toLocaleString()}
+                            </td>
+                            <td className="py-2 pr-3 text-foreground">{it.label}</td>
+                            <td className="py-2 pr-3 text-muted-foreground">{it.res}</td>
+                            <td className="py-2 pr-3 text-muted-foreground">
+                              {Math.round(Number(it.seconds))}s
+                            </td>
+                            <td className="py-2 text-right font-semibold text-foreground">
+                              {usd(it.cost)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t border-border">
+                          <td className="py-2 pr-3 font-semibold text-foreground" colSpan={4}>
+                            {t("usage.sum")}
+                          </td>
+                          <td className="py-2 text-right text-base font-bold text-primary">
+                            {usd(stats.totalCost)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-5">
