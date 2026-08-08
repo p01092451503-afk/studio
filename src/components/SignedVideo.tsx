@@ -102,19 +102,34 @@ export function SignedVideo({
     );
   }
 
+  // 포스터 이미지가 없으면 영상 첫 프레임을 썸네일처럼 보여준다.
+  const src = poster ? url : `${url}#t=0.1`;
+
   return (
     <video
       ref={(node) => {
         holder.current = node as unknown as HTMLDivElement | null;
       }}
-      key={url}
-      src={url}
+      key={src}
+      src={src}
       poster={poster ?? undefined}
       className={className}
       controls={controls}
       playsInline
-      preload={controls ? "metadata" : "none"}
-      onLoadedMetadata={() => videoTimer.current?.()}
+      muted={!controls}
+      preload="metadata"
+      onLoadedMetadata={(e) => {
+        videoTimer.current?.();
+        // Safari 등에서 첫 프레임이 그려지지 않는 경우 강제로 시크한다.
+        const v = e.currentTarget;
+        if (!poster && v.currentTime === 0) {
+          try {
+            v.currentTime = 0.1;
+          } catch {
+            /* ignore */
+          }
+        }
+      }}
       onError={() => videoTimer.current?.(true)}
     />
   );
