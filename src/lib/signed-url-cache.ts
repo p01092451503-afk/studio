@@ -1,4 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
+import {
+  markCacheHit,
+  markCacheMiss,
+  markInflightJoin,
+  markSignBatch,
+} from "@/lib/media-perf";
+
 
 /**
  * 서명 URL 발급을 버킷 단위로 묶어서(batch) 한 번에 요청하고, 만료 전까지 캐시한다.
