@@ -85,7 +85,14 @@ export function SignedVideo({
     return (
       <div ref={holder} className={cn("relative overflow-hidden bg-muted", className)}>
         {poster ? (
-          <img src={poster} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <img
+            src={poster}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+            onLoad={() => posterTimer.current?.()}
+            onError={() => posterTimer.current?.(true)}
+          />
         ) : (
           <div className="flex h-full w-full animate-pulse items-center justify-center text-xs text-muted-foreground">
             …
@@ -107,6 +114,9 @@ export function SignedVideo({
       controls={controls}
       playsInline
       preload={controls ? "metadata" : "none"}
+      onLoadedMetadata={() => videoTimer.current?.()}
+      onError={() => videoTimer.current?.(true)}
     />
   );
+
 }
