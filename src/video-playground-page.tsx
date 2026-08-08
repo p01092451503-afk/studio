@@ -85,9 +85,8 @@ function buildRoleDirective(assets: MediaAsset[]) {
 
 
 
-function removeLegacyMentionMarkers(value: string) {
-  return value.replace(/@(?=[\p{L}\p{N}_-])/gu, "");
-}
+
+
 
 function getFigureNumber(fileName: string) {
   const match = fileName.match(/(?:^|[^\p{L}\p{N}])figure[\s_-]*(\d+)/iu);
