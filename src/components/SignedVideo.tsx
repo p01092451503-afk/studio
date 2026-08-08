@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useSignedUrl, useSignedUrlState } from "@/hooks/useSignedUrl";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +9,7 @@ export function SignedVideo({
   className,
   ttl = 3600,
   controls = true,
+  lazy = true,
 }: {
   bucket: string;
   path: string | null | undefined;
@@ -15,8 +17,30 @@ export function SignedVideo({
   className?: string;
   ttl?: number;
   controls?: boolean;
+  lazy?: boolean;
 }) {
-  const { url, error, retry } = useSignedUrlState(bucket, path, ttl);
+  const holder = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(!lazy);
+
+  useEffect(() => {
+    if (visible || typeof IntersectionObserver === "undefined") return;
+    const el = holder.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [visible]);
+
+  // 포스터가 있으면 포스터 먼저, 영상은 화면에 들어올 때 발급한다.
+  const { url, error, retry } = useSignedUrlState(bucket, visible ? path : null, ttl);
   const poster = useSignedUrl(bucket, posterPath ?? null, ttl);
 
   if (error) {
@@ -44,26 +68,30 @@ export function SignedVideo({
 
   if (!url) {
     return (
-      <div
-        className={cn(
-          "flex animate-pulse items-center justify-center bg-muted text-xs text-muted-foreground",
-          className,
+      <div ref={holder} className={cn("relative overflow-hidden bg-muted", className)}>
+        {poster ? (
+          <img src={poster} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="flex h-full w-full animate-pulse items-center justify-center text-xs text-muted-foreground">
+            …
+          </div>
         )}
-      >
-        …
       </div>
     );
   }
 
   return (
     <video
+      ref={(node) => {
+        holder.current = node as unknown as HTMLDivElement | null;
+      }}
       key={url}
       src={url}
       poster={poster ?? undefined}
       className={className}
       controls={controls}
       playsInline
-      preload="metadata"
+      preload={controls ? "metadata" : "none"}
     />
   );
 }
