@@ -85,9 +85,8 @@ function buildRoleDirective(assets: MediaAsset[]) {
 
 
 
-function removeLegacyMentionMarkers(value: string) {
-  return value.replace(/@(?=[\p{L}\p{N}_-])/gu, "");
-}
+
+
 
 function getFigureNumber(fileName: string) {
   const match = fileName.match(/(?:^|[^\p{L}\p{N}])figure[\s_-]*(\d+)/iu);
@@ -229,8 +228,9 @@ export function VideoPlaygroundPage() {
     if (!prompt.trim()) return toast.error(t("playground.toast_need_prompt"));
     setPreparing(true);
     try {
-      const plainPrompt = removeLegacyMentionMarkers(prompt.trim());
+      const plainPrompt = prompt.trim();
       const roleDirective = rawPromptMode ? "" : buildRoleDirective(assets);
+
       let brief: ReferenceBrief | null = null;
       // Raw mode = 사용자가 입력한 원문만 그대로 전송 (역할 지시문/AI 보정 모두 미적용)
       let finalPrompt = rawPromptMode
