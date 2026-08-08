@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useSignedUrl, useSignedUrlState } from "@/hooks/useSignedUrl";
+import { startStage } from "@/lib/media-perf";
 import { cn } from "@/lib/utils";
+
 
 export function SignedVideo({
   bucket,
