@@ -347,14 +347,16 @@ function HistoryPage() {
           </p>
         </div>
       ) : tab === "video" ? (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(list as VideoRow[]).map((r) => {
+        <VirtualGrid
+          className="mt-6"
+          items={list as VideoRow[]}
+          getKey={(r) => r.id}
+          columnsForWidth={(w) => (w < 640 ? 1 : w < 1024 ? 2 : 3)}
+          estimateRowHeight={(cw) => cw * (9 / 16) + 96}
+          renderItem={(r) => {
             const first = r.results[0];
             return (
-              <div
-                key={r.id}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-toss-sm transition hover:shadow-toss"
-              >
+              <div className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-toss-sm transition hover:shadow-toss">
                 <button
                   onClick={() => navigate({ search: { id: r.id, tab: "video" } })}
                   className="block w-full text-left"
@@ -406,17 +408,21 @@ function HistoryPage() {
                 </div>
               </div>
             );
-          })}
-        </div>
+          }}
+        />
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {(list as Row[]).map((r) => {
+        <VirtualGrid
+          className="mt-6"
+          items={list as Row[]}
+          getKey={(r) => r.id}
+          columnsForWidth={(w) => (w < 640 ? 2 : w < 1024 ? 3 : 4)}
+          estimateRowHeight={(cw) => cw + 72}
+          renderItem={(r) => {
             const first = r.results[0];
             return (
               <button
-                key={r.id}
                 onClick={() => navigate({ search: { id: r.id, tab: "image" } })}
-                className="group overflow-hidden rounded-2xl border border-border bg-card text-left shadow-toss-sm transition hover:shadow-toss"
+                className="group block w-full overflow-hidden rounded-2xl border border-border bg-card text-left shadow-toss-sm transition hover:shadow-toss"
               >
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   {first?.thumb_path || first?.storage_path ? (
@@ -443,9 +449,10 @@ function HistoryPage() {
                 </div>
               </button>
             );
-          })}
-        </div>
+          }}
+        />
       )}
+
     </main>
   );
 }
