@@ -504,6 +504,7 @@
     "disclaimer": "BytePlus 공식 요금표(Seedance 2.0) 기준의 예상값이며 실제 청구 금액과 다를 수 있습니다. 실패한 생성은 집계에서 제외됩니다.",
     "nav": "비용",
     "per_item": "건별 비용",
+    "per_item_summary": "{{count}}건 · {{cost}}",
     "col_date": "생성 일시",
     "col_label": "작업",
     "col_resolution": "해상도",
