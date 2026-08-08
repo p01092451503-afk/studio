@@ -230,7 +230,7 @@ export function VideoPlaygroundPage() {
     setPreparing(true);
     try {
       const plainPrompt = removeLegacyMentionMarkers(prompt.trim());
-      const roleDirective = buildRoleDirective(assets);
+      const roleDirective = rawPromptMode ? "" : buildRoleDirective(assets);
       let brief: ReferenceBrief | null = null;
       // Raw mode = 사용자가 입력한 원문만 그대로 전송 (역할 지시문/AI 보정 모두 미적용)
       let finalPrompt = rawPromptMode
