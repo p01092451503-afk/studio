@@ -101,6 +101,7 @@ function UsagePage() {
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [measured, setMeasured] = useState<{ files: number; bytes: number } | null>(null);
   const [measuring, setMeasuring] = useState(false);
+  const [perItemOpen, setPerItemOpen] = useState(false);
 
   useEffect(() => {
     if (!tenantId) return;
