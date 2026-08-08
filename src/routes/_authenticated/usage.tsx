@@ -18,13 +18,13 @@ export const Route = createFileRoute("/_authenticated/usage")({
   component: UsagePage,
   head: () => ({
     meta: [
-      { title: "Usage & cost · Webtoon Video Generator" },
+      { title: "API Usage · Webtoon Video Generator" },
       {
         name: "description",
         content:
-          "Track estimated Seedance video generation spend by month, resolution and status.",
+          "Track estimated Seedance video generation usage by month, resolution and status.",
       },
-      { property: "og:title", content: "Usage & cost · Webtoon Video Generator" },
+      { property: "og:title", content: "API Usage · Webtoon Video Generator" },
       {
         property: "og:description",
         content: "Estimated video generation cost per month and resolution.",
