@@ -293,7 +293,7 @@ export function VideoPlaygroundPage() {
                     <div role="group" aria-label={t("playground.role_group", { tag: asset.tag })} className="mt-2 flex flex-wrap gap-1">{ROLE_OPTIONS[asset.kind].map((role) => { const active = asset.roles.includes(role); return <button key={role} type="button" role="checkbox" aria-checked={active} disabled={busy} onClick={() => setAssets((current) => current.map((item) => item.id === asset.id ? { ...item, roles: active ? item.roles.filter((value) => value !== role) : [...item.roles, role] } : item))} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}>{t(`playground.roles.${role}`)}</button>; })}</div>
                   </div>
                 </div>)}</div>
-                {buildRoleDirective(assets) && <div className="rounded-lg border border-border bg-muted/20 p-3">
+                {!rawPromptMode && buildRoleDirective(assets) && <div className="rounded-lg border border-border bg-muted/20 p-3">
                   <p className="text-xs font-bold">{t("playground.auto_directive_title")}</p>
                   <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">{buildRoleDirective(assets)}</p>
                 </div>}
