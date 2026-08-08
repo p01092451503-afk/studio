@@ -163,7 +163,8 @@ function UsagePage() {
 
   const stats = useMemo(() => {
     const list = rows ?? [];
-    const billable = list.filter((r) => r.status === "succeeded");
+    const DONE_STATUSES = new Set(["succeeded", "done", "completed", "success"]);
+    const billable = list.filter((r) => DONE_STATUSES.has((r.status ?? "").toLowerCase()));
     const cost = (r: Row) =>
       estimateSeedanceVideoCost(
         normalizeResolution(r.actual_resolution ?? r.resolution),
