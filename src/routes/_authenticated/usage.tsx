@@ -52,6 +52,8 @@ function normalizeResolution(v: string | null): SeedanceResolution {
 }
 
 function usd(n: number) {
+  const abs = Math.abs(n);
+  if (abs > 0 && abs < 0.01) return `$${n.toFixed(4)}`;
   return `$${n.toFixed(2)}`;
 }
 
