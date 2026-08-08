@@ -51,7 +51,7 @@
     "group_assets": "Assets",
     "group_studio": "Studios",
     "group_records": "Records",
-    "usage": "Usage & cost"
+    "usage": "API Usage"
   },
   "header": {
     "projects": {
@@ -83,7 +83,7 @@
       "sub": "AI video generation"
     },
     "usage": {
-      "title": "Usage & cost",
+      "title": "API Usage",
       "sub": "Estimates vs actual usage"
     }
   },
@@ -492,27 +492,27 @@
     "en": "English"
   },
   "usage": {
-    "title": "Usage & cost",
+    "title": "API Usage",
     "subtitle": "Estimated Seedance video generation spend by month and resolution.",
     "loading": "Loading…",
-    "month_cost": "This month (est.)",
-    "total_cost": "All time (est.)",
+    "month_cost": "This month usage (est.)",
+    "total_cost": "All time usage (est.)",
     "generated": "Succeeded / total",
-    "by_month": "Cost by month",
-    "by_resolution": "Cost by resolution",
+    "by_month": "Usage by month",
+    "by_resolution": "Usage by resolution",
     "empty": "No generations yet.",
     "disclaimer": "Estimates based on BytePlus Seedance 2.0 published rates; actual billing may differ. Failed generations are excluded.",
-    "nav": "Usage & cost",
-    "per_item": "Cost per generation",
+    "nav": "API Usage",
+    "per_item": "Usage per generation",
     "per_item_summary": "{{count}} items · {{cost}}",
     "col_date": "Created",
     "col_label": "Job",
     "col_resolution": "Resolution",
     "col_duration": "Duration",
-    "col_cost": "Est. cost",
+    "col_cost": "Est. usage",
     "sum": "Total",
     "rate_note": "Rates (5s): 480p $0.35 / 720p $0.76 / 1080p $1.87 / 4K $3.89 (per-second rate x duration).",
-    "other_title": "Other estimated costs",
+    "other_title": "Other estimated usage",
     "storage": "Storage\u00a0",
     "storage_hint": "Monthly estimate from generated video size",
     "gateway": "AI Gateway",
@@ -528,7 +528,7 @@
     "metric_count": "Generations",
     "metric_seconds": "Total duration",
     "metric_storage": "Storage",
-    "metric_cost": "Generation cost",
+    "metric_cost": "Generation usage",
     "measure": "Measure actual size",
     "measuring": "Measuring…",
     "not_measured": "Not measured",
