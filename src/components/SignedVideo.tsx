@@ -45,6 +45,19 @@ export function SignedVideo({
   const { url, error, retry } = useSignedUrlState(bucket, visible ? path : null, ttl);
   const poster = useSignedUrl(bucket, posterPath ?? null, ttl);
 
+  // 포스터/동영상 실제 로드 시간을 단계별로 계측한다.
+  const posterTimer = useRef<((error?: boolean) => number) | null>(null);
+  const videoTimer = useRef<((error?: boolean) => number) | null>(null);
+
+  useEffect(() => {
+    if (poster) posterTimer.current = startStage("poster", posterPath ?? undefined);
+  }, [poster, posterPath]);
+
+  useEffect(() => {
+    if (url) videoTimer.current = startStage("video", path ?? undefined);
+  }, [url, path]);
+
+
   if (error) {
     return (
       <div
