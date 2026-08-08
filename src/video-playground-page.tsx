@@ -232,7 +232,12 @@ export function VideoPlaygroundPage() {
       const plainPrompt = removeLegacyMentionMarkers(prompt.trim());
       const roleDirective = buildRoleDirective(assets);
       let brief: ReferenceBrief | null = null;
-      let finalPrompt = roleDirective ? `${roleDirective}\n${plainPrompt}` : plainPrompt;
+      // Raw mode = 사용자가 입력한 원문만 그대로 전송 (역할 지시문/AI 보정 모두 미적용)
+      let finalPrompt = rawPromptMode
+        ? plainPrompt
+        : roleDirective
+          ? `${roleDirective}\n${plainPrompt}`
+          : plainPrompt;
       if (!rawPromptMode) {
         if (studyPaths.length) {
           brief = await analyze({ data: { imagePaths: studyPaths, intent: plainPrompt, hasVideoFrames: hasVideo } }) as ReferenceBrief;
