@@ -5,6 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   estimateSeedanceVideoCost,
   type SeedanceResolution,
 } from "@/lib/video-constants";
