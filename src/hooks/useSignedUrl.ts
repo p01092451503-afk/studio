@@ -31,14 +31,17 @@ export function useSignedUrlState(bucket: string, path: string | null | undefine
     }
 
     const sign = async (attempt: number): Promise<void> => {
+      const done = startStage("signed_url", path);
       try {
         const signedUrl = await getSignedUrl(bucket, path, ttl);
+        done();
         if (cancelled) return;
         setError(null);
         setUrl(signedUrl);
         // 만료 30초 전에 재발급
         timer.current = setTimeout(() => void sign(1), Math.max(30, ttl - 30) * 1000);
       } catch (e) {
+        done(true);
         if (cancelled) return;
         if (attempt < 3) {
           timer.current = setTimeout(() => void sign(attempt + 1), 600 * attempt);
@@ -48,6 +51,7 @@ export function useSignedUrlState(bucket: string, path: string | null | undefine
         setError(e instanceof Error ? e.message : "SIGNED_URL_FAILED");
       }
     };
+
 
     void sign(1);
 
