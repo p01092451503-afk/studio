@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { SignedImage } from "@/components/SignedImage";
 import { SignedVideo } from "@/components/SignedVideo";
+import { VirtualGrid } from "@/components/virtual-grid";
+
 import { Button } from "@/components/ui/button";
 import { IconTooltip } from "@/components/icon-tooltip";
 import { toast } from "sonner";
