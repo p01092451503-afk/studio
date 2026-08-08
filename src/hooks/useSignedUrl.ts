@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSignedUrl, invalidateSignedUrl } from "@/lib/signed-url-cache";
+import { startStage } from "@/lib/media-perf";
+
 
 /**
  * 비공개 버킷의 서명 URL을 발급한다.
