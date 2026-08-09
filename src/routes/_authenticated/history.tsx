@@ -540,6 +540,28 @@ function VideoDetailCard({
           />
           <Meta label="Safety" value={row.moderation_status} />
           <Meta label={t("history.meta.seed")} value={row.seed?.toString() ?? "-"} />
+        </div>
+
+        {row.task_id && (
+          <div className="rounded-xl border bg-muted/40 p-3">
+            <div className="text-[11px] font-semibold text-muted-foreground">Task ID (ARK)</div>
+            <div className="mt-1 flex items-center gap-2">
+              <code className="flex-1 break-all text-xs">{row.task_id}</code>
+              <button
+                type="button"
+                className="rounded-lg border px-2 py-1 text-[11px] font-medium hover:bg-background"
+                onClick={() => {
+                  navigator.clipboard.writeText(row.task_id ?? "");
+                  toast.success("Task ID 복사됨");
+                }}
+              >
+                복사
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
           <Meta
             label={t("history.meta.created")}
             value={new Date(row.created_at).toLocaleString(locale)}
