@@ -17,6 +17,7 @@ export type VideoGenerationRow = {
   status: string;
   error_message: string | null;
   final_prompt: string | null;
+  task_id: string | null;
   options: Record<string, unknown> | null;
   results: VideoResult[];
 };
