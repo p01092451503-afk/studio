@@ -84,6 +84,7 @@ type VideoRow = {
   actual_duration_seconds: number | null;
   moderation_status: string;
   seed: number | null;
+  task_id: string | null;
   final_prompt: string | null;
   raw_prompt: string | null;
   prompt_edited: boolean;
@@ -108,7 +109,7 @@ function useVideoHistory(tenantId: string | null) {
       const { data, error } = await supabase
         .from("video_generations")
         .select(
-          "id, status, mode, work_label, aspect_ratio, resolution, duration_seconds, actual_resolution, actual_duration_seconds, api_model, api_model_version, moderation_status, seed, final_prompt, raw_prompt, prompt_edited, error_message, created_at, completed_at, video_results(id, seq, storage_path, poster_path, duration_seconds)",
+          "id, status, mode, work_label, aspect_ratio, resolution, duration_seconds, actual_resolution, actual_duration_seconds, api_model, api_model_version, moderation_status, seed, task_id, final_prompt, raw_prompt, prompt_edited, error_message, created_at, completed_at, video_results(id, seq, storage_path, poster_path, duration_seconds)",
         )
         .order("created_at", { ascending: false })
         .limit(100);
@@ -539,6 +540,28 @@ function VideoDetailCard({
           />
           <Meta label="Safety" value={row.moderation_status} />
           <Meta label={t("history.meta.seed")} value={row.seed?.toString() ?? "-"} />
+        </div>
+
+        {row.task_id && (
+          <div className="rounded-xl border bg-muted/40 p-3">
+            <div className="text-[11px] font-semibold text-muted-foreground">Task ID (ARK)</div>
+            <div className="mt-1 flex items-center gap-2">
+              <code className="flex-1 break-all text-xs">{row.task_id}</code>
+              <button
+                type="button"
+                className="rounded-lg border px-2 py-1 text-[11px] font-medium hover:bg-background"
+                onClick={() => {
+                  navigator.clipboard.writeText(row.task_id ?? "");
+                  toast.success("Task ID 복사됨");
+                }}
+              >
+                복사
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
           <Meta
             label={t("history.meta.created")}
             value={new Date(row.created_at).toLocaleString(locale)}
