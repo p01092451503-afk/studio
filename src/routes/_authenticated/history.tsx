@@ -84,6 +84,7 @@ type VideoRow = {
   actual_duration_seconds: number | null;
   moderation_status: string;
   seed: number | null;
+  task_id: string | null;
   final_prompt: string | null;
   raw_prompt: string | null;
   prompt_edited: boolean;
