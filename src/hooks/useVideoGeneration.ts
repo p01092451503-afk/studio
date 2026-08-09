@@ -67,7 +67,7 @@ export function useVideoGeneration(tenantId: string | null) {
     const { data } = await supabase
       .from("video_generations")
       .select(
-        "id, status, error_message, final_prompt, options, video_results(id, seq, storage_path, poster_path, duration_seconds)",
+        "id, status, error_message, final_prompt, task_id, options, video_results(id, seq, storage_path, poster_path, duration_seconds)",
       )
       .eq("id", id)
       .maybeSingle();
@@ -77,6 +77,7 @@ export function useVideoGeneration(tenantId: string | null) {
       status: data.status,
       error_message: data.error_message,
       final_prompt: data.final_prompt,
+      task_id: (data as any).task_id ?? null,
       options:
         data.options && typeof data.options === "object" && !Array.isArray(data.options)
           ? (data.options as Record<string, unknown>)
