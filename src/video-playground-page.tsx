@@ -135,7 +135,7 @@ export function VideoPlaygroundPage() {
   const [aspectRatio, setAspectRatio] = useState("9:16");
   const [outputQuantity, setOutputQuantity] = useState(1);
   const [generateAudio, setGenerateAudio] = useState(true);
-  const [rawPromptMode, setRawPromptMode] = useState(false);
+  const [rawPromptMode, setRawPromptMode] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [preparing, setPreparing] = useState(false);
