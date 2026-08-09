@@ -109,7 +109,7 @@ function useVideoHistory(tenantId: string | null) {
       const { data, error } = await supabase
         .from("video_generations")
         .select(
-          "id, status, mode, work_label, aspect_ratio, resolution, duration_seconds, actual_resolution, actual_duration_seconds, api_model, api_model_version, moderation_status, seed, final_prompt, raw_prompt, prompt_edited, error_message, created_at, completed_at, video_results(id, seq, storage_path, poster_path, duration_seconds)",
+          "id, status, mode, work_label, aspect_ratio, resolution, duration_seconds, actual_resolution, actual_duration_seconds, api_model, api_model_version, moderation_status, seed, task_id, final_prompt, raw_prompt, prompt_edited, error_message, created_at, completed_at, video_results(id, seq, storage_path, poster_path, duration_seconds)",
         )
         .order("created_at", { ascending: false })
         .limit(100);
