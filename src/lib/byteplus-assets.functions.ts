@@ -52,3 +52,17 @@ export const importBytePlusAsset = createServerFn({ method: "POST" })
     return { path, sourceUrl };
   });
 
+
+/** 자산 미리보기용 원본 URL을 조회한다. (썸네일/영상 미리보기 전용) */
+export const getBytePlusAssetPreviewUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { assetId: string }) => data)
+  .handler(async ({ data }) => {
+    const { getBytePlusAssetUrl } = await import("@/lib/byteplus-assets.server");
+    try {
+      const { url } = await getBytePlusAssetUrl(data.assetId);
+      return { url };
+    } catch {
+      return { url: "" };
+    }
+  });
