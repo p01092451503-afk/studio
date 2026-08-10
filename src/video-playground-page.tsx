@@ -324,6 +324,24 @@ export function VideoPlaygroundPage() {
         <aside data-video-tour="result" className="rounded-lg border border-border bg-card p-6"><h2 className="font-bold">{t("playground.result_title")}</h2><p className="mt-1 text-xs text-muted-foreground">{t("playground.result_sub")}</p><div className="mt-5 space-y-4">
           {gen.running && <EmptyResult loading />}{gen.recoveryNotice && <div className="flex gap-2 rounded-lg border border-primary/30 bg-primary-soft p-4 text-xs"><RefreshCw className="h-4 w-4 animate-spin text-primary" /><p>{gen.recoveryNotice}</p></div>}{gen.error && <ErrorCard message={gen.error} />}{gen.row?.results?.map((result) => <ResultVideo key={result.id} path={result.storage_path} />)}{!gen.running && !gen.row && !gen.error && <EmptyResult />}
           {gen.row?.task_id && <div className="rounded-lg border border-border p-3 text-xs"><div className="font-bold text-muted-foreground">Task ID (ARK)</div><div className="mt-1 flex items-center gap-2"><code className="flex-1 break-all">{gen.row.task_id}</code><button type="button" className="rounded-md border px-2 py-1 font-medium" onClick={() => navigator.clipboard.writeText(gen.row?.task_id ?? "")}>복사</button></div></div>}
+          {gen.taskStates.length > 0 && (
+            <div className="rounded-lg border border-border p-3 text-xs">
+              <div className="mb-2 flex items-center gap-2 font-bold text-muted-foreground">
+                처리 상태
+                {gen.running && <RefreshCw className="h-3 w-3 animate-spin text-primary" />}
+              </div>
+              <ul className="space-y-1.5">
+                {gen.taskStates.map((task, i) => (
+                  <li key={task.taskId} className="flex items-center gap-2">
+                    <span className="shrink-0 text-muted-foreground">#{i + 1}</span>
+                    <code className="min-w-0 flex-1 truncate">{task.taskId}</code>
+                    <TaskStatusPill status={task.status} />
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] text-muted-foreground">5초마다 자동으로 갱신됩니다.</p>
+            </div>
+          )}
           {gen.row?.final_prompt && <details className="rounded-lg border border-border p-4 text-xs"><summary className="cursor-pointer font-bold">{t("playground.view_prompt")}</summary><p className="mt-3 whitespace-pre-wrap leading-relaxed text-muted-foreground">{gen.row.final_prompt}</p></details>}
         </div></aside>
       </div>
