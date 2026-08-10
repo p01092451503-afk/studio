@@ -87,6 +87,9 @@ type VideoRow = {
   task_id: string | null;
   final_prompt: string | null;
   raw_prompt: string | null;
+  negative_prompt: string | null;
+  image_paths: unknown;
+  options: Record<string, unknown> | null;
   prompt_edited: boolean;
   error_message: string | null;
   created_at: string;
