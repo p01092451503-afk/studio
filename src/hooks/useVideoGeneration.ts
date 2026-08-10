@@ -98,6 +98,9 @@ export function useVideoGeneration(tenantId: string | null) {
       try {
         const res = await pollFn({ data: { videoGenerationId: currentId } });
         if ("recoveryNotice" in res) setRecoveryNotice(res.recoveryNotice ?? null);
+        if ("taskStates" in res && Array.isArray(res.taskStates)) {
+          setTaskStates(res.taskStates as TaskStateInfo[]);
+        }
         await load(currentId);
         if (res.status === "running") {
           timer.current = setTimeout(tick, 5000);
