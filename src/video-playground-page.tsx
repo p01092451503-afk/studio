@@ -18,6 +18,7 @@ import { analyzeReferences, type ReferenceBrief } from "@/lib/reference-analysis
 import { composeVideoPrompt } from "@/lib/video-prompt.functions";
 import { checkVideoModelHealth } from "@/lib/video-health.functions";
 import { checkBytePlusAssetsConnection, getBytePlusAssets, importBytePlusAsset } from "@/lib/byteplus-assets.functions";
+import { BytePlusAssetPreview } from "@/components/byteplus-asset-preview";
 import { type BytePlusAssetGroup, type BytePlusAsset } from "@/lib/byteplus-assets.server";
 
 
