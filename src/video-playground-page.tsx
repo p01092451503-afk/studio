@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from "re
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { AlertCircle, CheckCircle2, CircleHelp, Download, Film, ImagePlus, Loader2, Monitor, RefreshCw, Trash2, Video, Volume2, VolumeX, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, CircleHelp, Download, Film, FolderOpen, ImagePlus, Loader2, Monitor, PackageOpen, RefreshCw, Trash2, Video, Volume2, VolumeX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useVideoGeneration } from "@/hooks/useVideoGeneration";
@@ -13,10 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { analyzeReferences, type ReferenceBrief } from "@/lib/reference-analysis.functions";
 import { composeVideoPrompt } from "@/lib/video-prompt.functions";
 import { checkVideoModelHealth } from "@/lib/video-health.functions";
-import { checkBytePlusAssetsConnection } from "@/lib/byteplus-assets.functions";
+import { checkBytePlusAssetsConnection, getBytePlusAssets, importBytePlusAsset } from "@/lib/byteplus-assets.functions";
+import { type BytePlusAssetGroup, type BytePlusAsset } from "@/lib/byteplus-assets.server";
+
 
 type AssetsCheck = {
   ok: boolean;
