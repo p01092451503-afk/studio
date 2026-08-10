@@ -16,6 +16,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { analyzeReferences, type ReferenceBrief } from "@/lib/reference-analysis.functions";
 import { composeVideoPrompt } from "@/lib/video-prompt.functions";
 import { checkVideoModelHealth } from "@/lib/video-health.functions";
+import { checkBytePlusAssetsConnection } from "@/lib/byteplus-assets.functions";
+
+type AssetsCheck = {
+  ok: boolean;
+  status: number;
+  action: string;
+  host: string;
+  region: string;
+  service: string;
+  errorCode?: string;
+  errorMessage?: string;
+  body?: string;
+};
+
 import { explainVideoError } from "@/lib/video-errors";
 import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { type SeedanceResolution } from "@/lib/video-constants";
