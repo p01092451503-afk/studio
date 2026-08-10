@@ -192,29 +192,33 @@ export function VideoPlaygroundPage() {
   const busy = uploading || preparing || gen.running;
 
   async function loadAssetGroups() {
-    setLibraryLoading(true);
-    setLibraryError(null);
+    setGroupLoading(true);
+    setGroupError(null);
+    setSelectedGroupId("");
+    setAssetItems([]);
+    setAssetItemsError(null);
     try {
       const result = await fetchAssets({ data: {} }) as { groups?: BytePlusAssetGroup[]; raw?: string };
       setAssetGroups(result.groups ?? []);
     } catch (error) {
-      setLibraryError(error instanceof Error ? error.message : String(error));
+      setGroupError(error instanceof Error ? error.message : String(error));
     } finally {
-      setLibraryLoading(false);
+      setGroupLoading(false);
     }
   }
 
   async function loadAssetsForGroup(groupId: string) {
     setSelectedGroupId(groupId);
-    setLibraryLoading(true);
-    setLibraryError(null);
+    setAssetItems([]);
+    setAssetItemsLoading(true);
+    setAssetItemsError(null);
     try {
       const result = await fetchAssets({ data: { groupId } }) as { assets?: BytePlusAsset[]; raw?: string };
       setAssetItems(result.assets ?? []);
     } catch (error) {
-      setLibraryError(error instanceof Error ? error.message : String(error));
+      setAssetItemsError(error instanceof Error ? error.message : String(error));
     } finally {
-      setLibraryLoading(false);
+      setAssetItemsLoading(false);
     }
   }
 
