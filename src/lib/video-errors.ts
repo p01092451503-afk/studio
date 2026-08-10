@@ -139,6 +139,10 @@ export function getKoreanVideoErrorSummary(raw: string): string {
   const info = explainVideoError(raw);
   const r = raw.toLowerCase();
 
+  if (r.includes("inputimagesensitivecontentdetected") || r.includes("may contain real person") || r.includes("privacyinformation")) {
+    return "Seedance(BytePlus)가 참고 자료로 보낸 이미지(업로드한 영상에서 추출된 프레임 포함)에 실제 사람이 담겨 있다고 판단해 요청을 거부했습니다. 프롬프트 길이·해상도·비율·영상 길이 등 파라미터 문제가 아니며, 앱·API 키·엔드포인트 문제도 아닙니다. 실사 인물이 보이는 사진이나 실사 영상을 참고 자료에서 제거하고, 일러스트·웹툰·AI 생성 캐릭터 이미지로 교체한 뒤 다시 시도해 주세요.";
+  }
+
   if (r.includes("inputtextsensitivecontentdetected") || (r.includes("input text") && r.includes("sensitive information"))) {
     return "Seedance(BytePlus)가 입력한 프롬프트 문구를 콘텐츠 정책상 민감한 영상 묘사로 판단해 요청 자체를 거부했습니다. 영상은 생성되지 않았고, 앱·API 키·엔드포인트 문제가 아닙니다. 프롬프트에서 특정 인물·브랜드·작품·단체명, 실제 사건·장소, 노출·성적·폭력·위험 행위를 직접 지칭하는 표현을 줄이고, 장면 구성·피사체 외형·조명·색감·카메라 움직임만 중립적으로 설명해 다시 시도해 주세요.";
   }
