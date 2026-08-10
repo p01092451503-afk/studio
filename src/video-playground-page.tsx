@@ -168,8 +168,10 @@ export function VideoPlaygroundPage() {
   const [assetGroups, setAssetGroups] = useState<BytePlusAssetGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [assetItems, setAssetItems] = useState<BytePlusAsset[]>([]);
-  const [libraryLoading, setLibraryLoading] = useState(false);
-  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [groupLoading, setGroupLoading] = useState(false);
+  const [groupError, setGroupError] = useState<string | null>(null);
+  const [assetItemsLoading, setAssetItemsLoading] = useState(false);
+  const [assetItemsError, setAssetItemsError] = useState<string | null>(null);
   const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
 
 
