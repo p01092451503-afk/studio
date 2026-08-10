@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { startVideoGeneration, pollVideoGeneration } from "@/lib/video.functions";
+import { startVideoGeneration, pollVideoGeneration, type TaskStateInfo } from "@/lib/video.functions";
 import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 
 export type VideoResult = {
