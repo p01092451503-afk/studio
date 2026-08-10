@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { startVideoGeneration, pollVideoGeneration } from "@/lib/video.functions";
+import { startVideoGeneration, pollVideoGeneration, type TaskStateInfo } from "@/lib/video.functions";
 import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 
 export type VideoResult = {
@@ -51,6 +51,7 @@ export function useVideoGeneration(tenantId: string | null) {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recoveryNotice, setRecoveryNotice] = useState<string | null>(null);
+  const [taskStates, setTaskStates] = useState<TaskStateInfo[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Resume a job that was still running before this component remounted.
@@ -98,6 +99,9 @@ export function useVideoGeneration(tenantId: string | null) {
       try {
         const res = await pollFn({ data: { videoGenerationId: currentId } });
         if ("recoveryNotice" in res) setRecoveryNotice(res.recoveryNotice ?? null);
+        if ("taskStates" in res && Array.isArray(res.taskStates)) {
+          setTaskStates(res.taskStates as TaskStateInfo[]);
+        }
         await load(currentId);
         if (res.status === "running") {
           timer.current = setTimeout(tick, 5000);
@@ -129,6 +133,7 @@ export function useVideoGeneration(tenantId: string | null) {
     setRunning(true);
     setError(null);
     setRecoveryNotice(null);
+    setTaskStates([]);
     setRow(null);
     setCurrentId(null);
     try {
@@ -155,5 +160,5 @@ export function useVideoGeneration(tenantId: string | null) {
   }
 
 
-  return { run, running, row, currentId, error, recoveryNotice };
+  return { run, running, row, currentId, error, recoveryNotice, taskStates };
 }

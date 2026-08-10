@@ -324,6 +324,24 @@ export function VideoPlaygroundPage() {
         <aside data-video-tour="result" className="rounded-lg border border-border bg-card p-6"><h2 className="font-bold">{t("playground.result_title")}</h2><p className="mt-1 text-xs text-muted-foreground">{t("playground.result_sub")}</p><div className="mt-5 space-y-4">
           {gen.running && <EmptyResult loading />}{gen.recoveryNotice && <div className="flex gap-2 rounded-lg border border-primary/30 bg-primary-soft p-4 text-xs"><RefreshCw className="h-4 w-4 animate-spin text-primary" /><p>{gen.recoveryNotice}</p></div>}{gen.error && <ErrorCard message={gen.error} />}{gen.row?.results?.map((result) => <ResultVideo key={result.id} path={result.storage_path} />)}{!gen.running && !gen.row && !gen.error && <EmptyResult />}
           {gen.row?.task_id && <div className="rounded-lg border border-border p-3 text-xs"><div className="font-bold text-muted-foreground">Task ID (ARK)</div><div className="mt-1 flex items-center gap-2"><code className="flex-1 break-all">{gen.row.task_id}</code><button type="button" className="rounded-md border px-2 py-1 font-medium" onClick={() => navigator.clipboard.writeText(gen.row?.task_id ?? "")}>복사</button></div></div>}
+          {gen.taskStates.length > 0 && (
+            <div className="rounded-lg border border-border p-3 text-xs">
+              <div className="mb-2 flex items-center gap-2 font-bold text-muted-foreground">
+                처리 상태
+                {gen.running && <RefreshCw className="h-3 w-3 animate-spin text-primary" />}
+              </div>
+              <ul className="space-y-1.5">
+                {gen.taskStates.map((task, i) => (
+                  <li key={task.taskId} className="flex items-center gap-2">
+                    <span className="shrink-0 text-muted-foreground">#{i + 1}</span>
+                    <code className="min-w-0 flex-1 truncate">{task.taskId}</code>
+                    <TaskStatusPill status={task.status} />
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] text-muted-foreground">5초마다 자동으로 갱신됩니다.</p>
+            </div>
+          )}
           {gen.row?.final_prompt && <details className="rounded-lg border border-border p-4 text-xs"><summary className="cursor-pointer font-bold">{t("playground.view_prompt")}</summary><p className="mt-3 whitespace-pre-wrap leading-relaxed text-muted-foreground">{gen.row.final_prompt}</p></details>}
         </div></aside>
       </div>
@@ -336,3 +354,28 @@ function ErrorCard({ message }: { message: string }) { const info = explainVideo
 function ResultVideo({ path }: { path: string }) { const { t } = useTranslation(); const url = useSignedUrl("generation-outputs", path, 300); const [downloading, setDownloading] = useState(false); async function download() { setDownloading(true); try { const name = path.split("/").pop() || "pilotstudio-video.mp4"; const { data, error } = await supabase.storage.from("generation-outputs").createSignedUrl(path, 60, { download: name }); if (error || !data?.signedUrl) throw error || new Error("Download failed"); const link = document.createElement("a"); link.href = data.signedUrl; link.download = name; document.body.appendChild(link); link.click(); link.remove(); } catch (error) { toast.error(error instanceof Error ? error.message : t("playground.download_failed")); } finally { setDownloading(false); } } if (!url) return <div className="aspect-video animate-pulse rounded-lg bg-muted" />; return <div className="space-y-3"><video src={url} controls playsInline className="aspect-video w-full rounded-lg border border-border bg-foreground object-contain" /><Button variant="outline" className="w-full" onClick={download} disabled={downloading}>{downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {t("playground.download")}</Button></div>; }
 function ValidationItem({ label, value }: { label: string; value: ValidationState }) { const { t } = useTranslation(); const positive = value === "valid" || value === "available"; return <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2 text-xs"><span className="text-muted-foreground">{label}</span><span className="font-bold">{positive ? t("playground.state_ready") : value === "configured" ? t("playground.state_configured") : value === "not_configured" ? t("playground.state_not_set") : value === "invalid" || value === "unavailable" || value === "missing" ? t("playground.state_check") : t("playground.state_unknown")}</span></div>; }
 function OptionRow({ label, children }: { label: string; children: ReactNode }) { return <div className="space-y-2"><Label className="text-xs font-bold">{label}</Label><div className="rounded-md border border-border bg-card p-1">{children}</div></div>; }
+const TASK_STATUS_LABEL: Record<string, string> = {
+  queued: "대기",
+  running: "실행 중",
+  succeeded: "완료",
+  failed: "실패",
+  cancelled: "취소됨",
+};
+
+const TASK_STATUS_STYLE: Record<string, string> = {
+  queued: "bg-muted text-muted-foreground",
+  running: "bg-primary-soft text-primary",
+  succeeded: "bg-emerald-100 text-emerald-700",
+  failed: "bg-destructive/10 text-destructive",
+  cancelled: "bg-destructive/10 text-destructive",
+};
+
+function TaskStatusPill({ status }: { status: string }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${TASK_STATUS_STYLE[status] ?? "bg-muted text-muted-foreground"}`}
+    >
+      {TASK_STATUS_LABEL[status] ?? status}
+    </span>
+  );
+}

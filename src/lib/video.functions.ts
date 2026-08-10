@@ -3,6 +3,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { VideoTaskState } from "@/lib/video.server";
 
+export type TaskStateInfo = {
+  taskId: string;
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  error?: string | null;
+};
+
 const startSchema = z.object({
   workLabel: z.string().default("V1"),
   /** 영상 생성 프로바이더. 기본 엔진은 Seedance 2.0이다. */
@@ -191,12 +197,20 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!row) throw new Error("VIDEO_NOT_FOUND");
     if (row.status === "done" || row.status === "error") {
-      return { status: row.status as "done" | "error", error: row.error_message };
+      return {
+        status: row.status as "done" | "error",
+        error: row.error_message,
+        taskStates: row.task_id
+          ? [{ taskId: row.task_id, status: row.status === "done" ? "succeeded" : "failed" }]
+          : [],
+      };
     }
-    if (!row.task_id) return { status: "running" as const, error: null };
+    if (!row.task_id)
+      return { status: "running" as const, error: null, taskStates: [] as TaskStateInfo[] };
 
     const { getVideoTask } = await import("@/lib/video.server");
     let state: VideoTaskState;
+    let taskStates: TaskStateInfo[] = [];
     try {
       if (row.task_id.startsWith("replicate:") || row.task_id.startsWith("lovable:")) {
         throw new Error("LEGACY_VIDEO_PROVIDER_UNSUPPORTED: Start a new Seedance 2.0 generation.");
@@ -209,6 +223,11 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
         : [];
       const taskIds = storedTaskIds.length ? storedTaskIds : [row.task_id];
       const states = await Promise.all(taskIds.map((taskId) => getVideoTask(taskId)));
+      taskStates = taskIds.map((taskId, i) => ({
+        taskId,
+        status: states[i]?.status ?? "queued",
+        error: states[i]?.error ?? null,
+      }));
       const failed = states.find((item) => item.status === "failed" || item.status === "cancelled");
       const pending = states.some((item) => item.status === "queued" || item.status === "running");
       state = failed ?? (pending
@@ -217,10 +236,11 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
     } catch (pollError) {
       const reason = pollError instanceof Error ? pollError.message : String(pollError);
       state = { status: "failed", error: reason };
+      taskStates = [{ taskId: row.task_id, status: "failed", error: reason }];
     }
 
     if (state.status === "queued" || state.status === "running") {
-      return { status: "running" as const, error: null, recoveryNotice: null };
+      return { status: "running" as const, error: null, recoveryNotice: null, taskStates };
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -247,7 +267,7 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
           completed_at: new Date().toISOString(),
         })
         .eq("id", row.id);
-      return { status: "error" as const, error: friendly, recoveryNotice: null };
+      return { status: "error" as const, error: friendly, recoveryNotice: null, taskStates };
     }
 
     try {
@@ -291,7 +311,7 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
         .eq("id", row.id);
 
       void userId;
-      return { status: "done" as const, error: null };
+      return { status: "done" as const, error: null, taskStates };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const friendly = formatVideoFailureReport(message, { stage: "download", ...failureContext });
@@ -304,6 +324,6 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
           completed_at: new Date().toISOString(),
         })
         .eq("id", row.id);
-      return { status: "error" as const, error: friendly };
+      return { status: "error" as const, error: friendly, taskStates };
     }
   });
