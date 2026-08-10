@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from "re
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { AlertCircle, CheckCircle2, CircleHelp, Download, Film, ImagePlus, Loader2, Monitor, RefreshCw, Trash2, Video, Volume2, VolumeX, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, CircleHelp, Download, Film, FolderOpen, ImagePlus, Loader2, Monitor, PackageOpen, RefreshCw, Trash2, Video, Volume2, VolumeX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useVideoGeneration } from "@/hooks/useVideoGeneration";
@@ -13,10 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { analyzeReferences, type ReferenceBrief } from "@/lib/reference-analysis.functions";
 import { composeVideoPrompt } from "@/lib/video-prompt.functions";
 import { checkVideoModelHealth } from "@/lib/video-health.functions";
-import { checkBytePlusAssetsConnection } from "@/lib/byteplus-assets.functions";
+import { checkBytePlusAssetsConnection, getBytePlusAssets, importBytePlusAsset } from "@/lib/byteplus-assets.functions";
+import { type BytePlusAssetGroup, type BytePlusAsset } from "@/lib/byteplus-assets.server";
+
 
 type AssetsCheck = {
   ok: boolean;
@@ -157,8 +160,18 @@ export function VideoPlaygroundPage() {
   const [health, setHealth] = useState<Health | null>(null);
   const [checkingHealth, setCheckingHealth] = useState(false);
   const checkAssets = useServerFn(checkBytePlusAssetsConnection);
+  const fetchAssets = useServerFn(getBytePlusAssets);
+  const importAsset = useServerFn(importBytePlusAsset);
   const [assetsCheck, setAssetsCheck] = useState<AssetsCheck | null>(null);
   const [checkingAssets, setCheckingAssets] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [assetGroups, setAssetGroups] = useState<BytePlusAssetGroup[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [assetItems, setAssetItems] = useState<BytePlusAsset[]>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
+
 
 
   useEffect(() => { if (shouldStartVideoTour()) setTourOpen(true); }, []);
@@ -176,6 +189,65 @@ export function VideoPlaygroundPage() {
   const seedanceHealth = health?.models.find((model) => model.provider === "seedance") ?? null;
   const busy = uploading || preparing || gen.running;
 
+  async function loadAssetGroups() {
+    setLibraryLoading(true);
+    setLibraryError(null);
+    try {
+      const result = await fetchAssets({ data: {} }) as { groups?: BytePlusAssetGroup[]; raw?: string };
+      setAssetGroups(result.groups ?? []);
+    } catch (error) {
+      setLibraryError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLibraryLoading(false);
+    }
+  }
+
+  async function loadAssetsForGroup(groupId: string) {
+    setSelectedGroupId(groupId);
+    setLibraryLoading(true);
+    setLibraryError(null);
+    try {
+      const result = await fetchAssets({ data: { groupId } }) as { assets?: BytePlusAsset[]; raw?: string };
+      setAssetItems(result.assets ?? []);
+    } catch (error) {
+      setLibraryError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLibraryLoading(false);
+    }
+  }
+
+  async function addAssetFromLibrary(asset: BytePlusAsset) {
+    if (!tenantId) return;
+    setImportingAssetId(asset.assetId);
+    try {
+      const result = await importAsset({ data: { assetId: asset.assetId, tenantId, name: asset.assetName || asset.assetId } }) as { path: string };
+      const kind: MediaKind = asset.assetType === "video" ? "video" : asset.assetType === "audio" ? "audio" : "image";
+      let imageCount = assets.filter((a) => a.kind === "image").length;
+      let videoCount = assets.filter((a) => a.kind === "video").length;
+      let audioCount = assets.filter((a) => a.kind === "audio").length;
+      if (kind === "image") imageCount += 1;
+      if (kind === "video") videoCount += 1;
+      if (kind === "audio") audioCount += 1;
+      const tag = `@${kind}${kind === "image" ? imageCount : kind === "video" ? videoCount : audioCount}`;
+      const added: MediaAsset = {
+        id: crypto.randomUUID(),
+        name: asset.assetName || asset.assetId,
+        kind,
+        tag,
+        roles: autoRolesFor(kind, kind === "image" ? imageCount - 1 : kind === "video" ? videoCount - 1 : audioCount - 1),
+        coverPath: kind === "audio" ? null : result.path,
+        framePaths: kind === "audio" ? [] : [result.path],
+      };
+      setAssets((current) => [...current, added].slice(0, 6));
+      toast.success(`${asset.assetName || asset.assetId}를 참고 미디어로 추가했습니다.`);
+      if (assets.length + 1 >= 6) setLibraryOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setImportingAssetId(null);
+    }
+  }
+
   async function uploadBlob(blob: Blob, name: string) {
     if (!tenantId) throw new Error("NO_TENANT");
     const path = `${tenantId}/video-refs/${Date.now()}-${crypto.randomUUID()}-${name}`;
@@ -183,6 +255,7 @@ export function VideoPlaygroundPage() {
     if (error) throw error;
     return path;
   }
+
 
   async function addMedia(files: FileList) {
     setUploading(true);
@@ -305,6 +378,14 @@ export function VideoPlaygroundPage() {
             <div data-video-tour="references" className="space-y-3"><div className="flex items-center justify-between"><Label className="font-bold">{t("playground.references_label")}</Label>{assets.length > 0 && <Button variant="ghost" size="sm" onClick={() => setAssets([])}><Trash2 className="h-4 w-4" /> {t("playground.clear")}</Button>}</div>
               <label onDragEnter={handleReferenceDrag} onDragOver={handleReferenceDrag} onDragLeave={handleReferenceDrag} onDrop={handleReferenceDrop} className={`flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-5 text-center transition-colors ${dragActive ? "border-primary bg-primary-soft" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-primary-soft"}`}>{uploading ? <Loader2 className="h-7 w-7 animate-spin text-primary" /> : <ImagePlus className="h-7 w-7 text-primary" />}<span className="text-sm font-bold">{uploading ? t("playground.uploading") : dragActive ? t("playground.drop_files") : t("playground.add_files")}</span><span className="text-xs text-muted-foreground">{t("playground.files_hint")}</span>
                 <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">또는</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <Button variant="outline" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => { setLibraryOpen(true); void loadAssetGroups(); }}>
+                <FolderOpen className="h-4 w-4" /> BytePlus 자산 라이브러리에서 가져오기
+              </Button>
               {assets.length > 0 && <div className="space-y-3">
                 <p className="text-xs leading-relaxed text-muted-foreground">{t("playground.tag_hint_1")} <span className="font-semibold text-foreground">@image1 · @video1 · @audio1</span> {t("playground.tag_hint_2")}</p>
                 <div className="grid gap-3 sm:grid-cols-2">{assets.map((asset) => <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30">
@@ -371,6 +452,72 @@ export function VideoPlaygroundPage() {
         </div></aside>
       </div>
     </div><VideoOnboardingTour open={tourOpen} onOpenChange={setTourOpen} />
+    <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <PackageOpen className="h-5 w-5" /> BytePlus 자산 라이브러리
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {libraryLoading && (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" /> 불러오는 중...
+            </div>
+          )}
+          {libraryError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+              {libraryError}
+            </div>
+          )}
+          {!libraryLoading && !libraryError && !selectedGroupId && assetGroups.length === 0 && (
+            <div className="py-8 text-center text-sm text-muted-foreground">등록된 그룹이 없습니다.</div>
+          )}
+          {!libraryLoading && !libraryError && !selectedGroupId && assetGroups.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">그룹을 선택하면 해당 그룹의 자산을 볼 수 있습니다.</p>
+              <div className="grid gap-2">
+                {assetGroups.map((group) => (
+                  <Button key={group.groupId} variant="outline" className="justify-start" onClick={() => void loadAssetsForGroup(group.groupId)}>
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    {group.groupName}
+                    <span className="ml-auto text-xs text-muted-foreground">{group.groupType}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          {!libraryLoading && !libraryError && selectedGroupId && (
+            <div className="space-y-3">
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedGroupId(""); setAssetItems([]); }}>
+                ← 그룹 목록으로
+              </Button>
+              <p className="text-xs text-muted-foreground">원하는 자산을 선택하면 Storage에 복사 후 참고 미디어로 추가됩니다.</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {assetItems.map((asset) => (
+                  <div key={asset.assetId} className="overflow-hidden rounded-lg border border-border bg-muted/30">
+                    {asset.thumbnailUrl ? (
+                      <img src={asset.thumbnailUrl} alt={asset.assetName} className="aspect-video w-full object-cover" />
+                    ) : (
+                      <div className="flex aspect-video w-full items-center justify-center bg-muted">
+                        <PackageOpen className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <p className="text-xs font-bold truncate">{asset.assetName}</p>
+                      <p className="text-[11px] text-muted-foreground">{asset.assetType}</p>
+                      <Button className="mt-2 w-full" size="sm" disabled={busy || assets.length >= 6 || importingAssetId === asset.assetId} onClick={() => void addAssetFromLibrary(asset)}>
+                        {importingAssetId === asset.assetId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} 참고 미디어로 추가
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   </main>;
 }
 
