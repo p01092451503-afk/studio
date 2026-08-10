@@ -267,7 +267,7 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
           completed_at: new Date().toISOString(),
         })
         .eq("id", row.id);
-      return { status: "error" as const, error: friendly, recoveryNotice: null };
+      return { status: "error" as const, error: friendly, recoveryNotice: null, taskStates };
     }
 
     try {
@@ -311,7 +311,7 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
         .eq("id", row.id);
 
       void userId;
-      return { status: "done" as const, error: null };
+      return { status: "done" as const, error: null, taskStates };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const friendly = formatVideoFailureReport(message, { stage: "download", ...failureContext });
@@ -324,6 +324,6 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
           completed_at: new Date().toISOString(),
         })
         .eq("id", row.id);
-      return { status: "error" as const, error: friendly };
+      return { status: "error" as const, error: friendly, taskStates };
     }
   });
