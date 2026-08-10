@@ -168,8 +168,10 @@ export function VideoPlaygroundPage() {
   const [assetGroups, setAssetGroups] = useState<BytePlusAssetGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [assetItems, setAssetItems] = useState<BytePlusAsset[]>([]);
-  const [libraryLoading, setLibraryLoading] = useState(false);
-  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [groupLoading, setGroupLoading] = useState(false);
+  const [groupError, setGroupError] = useState<string | null>(null);
+  const [assetItemsLoading, setAssetItemsLoading] = useState(false);
+  const [assetItemsError, setAssetItemsError] = useState<string | null>(null);
   const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
 
 
@@ -190,29 +192,33 @@ export function VideoPlaygroundPage() {
   const busy = uploading || preparing || gen.running;
 
   async function loadAssetGroups() {
-    setLibraryLoading(true);
-    setLibraryError(null);
+    setGroupLoading(true);
+    setGroupError(null);
+    setSelectedGroupId("");
+    setAssetItems([]);
+    setAssetItemsError(null);
     try {
       const result = await fetchAssets({ data: {} }) as { groups?: BytePlusAssetGroup[]; raw?: string };
       setAssetGroups(result.groups ?? []);
     } catch (error) {
-      setLibraryError(error instanceof Error ? error.message : String(error));
+      setGroupError(error instanceof Error ? error.message : String(error));
     } finally {
-      setLibraryLoading(false);
+      setGroupLoading(false);
     }
   }
 
   async function loadAssetsForGroup(groupId: string) {
     setSelectedGroupId(groupId);
-    setLibraryLoading(true);
-    setLibraryError(null);
+    setAssetItems([]);
+    setAssetItemsLoading(true);
+    setAssetItemsError(null);
     try {
       const result = await fetchAssets({ data: { groupId } }) as { assets?: BytePlusAsset[]; raw?: string };
       setAssetItems(result.assets ?? []);
     } catch (error) {
-      setLibraryError(error instanceof Error ? error.message : String(error));
+      setAssetItemsError(error instanceof Error ? error.message : String(error));
     } finally {
-      setLibraryLoading(false);
+      setAssetItemsLoading(false);
     }
   }
 
@@ -460,59 +466,78 @@ export function VideoPlaygroundPage() {
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {libraryLoading && (
-            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" /> 불러오는 중...
-            </div>
-          )}
-          {libraryError && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
-              {libraryError}
-            </div>
-          )}
-          {!libraryLoading && !libraryError && !selectedGroupId && assetGroups.length === 0 && (
-            <div className="py-8 text-center text-sm text-muted-foreground">등록된 그룹이 없습니다.</div>
-          )}
-          {!libraryLoading && !libraryError && !selectedGroupId && assetGroups.length > 0 && (
+          {!selectedGroupId && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">그룹을 선택하면 해당 그룹의 자산을 볼 수 있습니다.</p>
-              <div className="grid gap-2">
-                {assetGroups.map((group) => (
-                  <Button key={group.groupId} variant="outline" className="justify-start" onClick={() => void loadAssetsForGroup(group.groupId)}>
-                    <FolderOpen className="mr-2 h-4 w-4" />
-                    {group.groupName}
-                    <span className="ml-auto text-xs text-muted-foreground">{group.groupType}</span>
-                  </Button>
-                ))}
-              </div>
+              {groupLoading && (
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" /> 그룹 목록을 불러오는 중...
+                </div>
+              )}
+              {groupError && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+                  <p className="font-bold">그룹 목록을 불러오지 못했습니다</p>
+                  <p className="mt-1">{groupError}</p>
+                </div>
+              )}
+              {!groupLoading && !groupError && assetGroups.length === 0 && (
+                <div className="py-8 text-center text-sm text-muted-foreground">등록된 그룹이 없습니다.</div>
+              )}
+              {!groupLoading && !groupError && assetGroups.length > 0 && (
+                <div className="grid gap-2">
+                  {assetGroups.map((group) => (
+                    <Button key={group.groupId} variant="outline" className="justify-start" disabled={assetItemsLoading} onClick={() => void loadAssetsForGroup(group.groupId)}>
+                      <FolderOpen className="mr-2 h-4 w-4" />
+                      {group.groupName}
+                      <span className="ml-auto text-xs text-muted-foreground">{group.groupType}</span>
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-          {!libraryLoading && !libraryError && selectedGroupId && (
+          {selectedGroupId && (
             <div className="space-y-3">
-              <Button variant="ghost" size="sm" onClick={() => { setSelectedGroupId(""); setAssetItems([]); }}>
+              <Button variant="ghost" size="sm" disabled={assetItemsLoading} onClick={() => { setSelectedGroupId(""); setAssetItems([]); setAssetItemsError(null); }}>
                 ← 그룹 목록으로
               </Button>
               <p className="text-xs text-muted-foreground">원하는 자산을 선택하면 Storage에 복사 후 참고 미디어로 추가됩니다.</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {assetItems.map((asset) => (
-                  <div key={asset.assetId} className="overflow-hidden rounded-lg border border-border bg-muted/30">
-                    {asset.thumbnailUrl ? (
-                      <img src={asset.thumbnailUrl} alt={asset.assetName} className="aspect-video w-full object-cover" />
-                    ) : (
-                      <div className="flex aspect-video w-full items-center justify-center bg-muted">
-                        <PackageOpen className="h-8 w-8 text-muted-foreground" />
+              {assetItemsLoading && (
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" /> 자산 목록을 불러오는 중...
+                </div>
+              )}
+              {assetItemsError && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+                  <p className="font-bold">자산 목록을 불러오지 못했습니다</p>
+                  <p className="mt-1">{assetItemsError}</p>
+                </div>
+              )}
+              {!assetItemsLoading && !assetItemsError && assetItems.length === 0 && (
+                <div className="py-8 text-center text-sm text-muted-foreground">이 그룹에 등록된 자산이 없습니다.</div>
+              )}
+              {!assetItemsLoading && !assetItemsError && assetItems.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {assetItems.map((asset) => (
+                    <div key={asset.assetId} className="overflow-hidden rounded-lg border border-border bg-muted/30">
+                      {asset.thumbnailUrl ? (
+                        <img src={asset.thumbnailUrl} alt={asset.assetName} className="aspect-video w-full object-cover" />
+                      ) : (
+                        <div className="flex aspect-video w-full items-center justify-center bg-muted">
+                          <PackageOpen className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <p className="text-xs font-bold truncate">{asset.assetName}</p>
+                        <p className="text-[11px] text-muted-foreground">{asset.assetType}</p>
+                        <Button className="mt-2 w-full" size="sm" disabled={busy || assets.length >= 6 || importingAssetId === asset.assetId} onClick={() => void addAssetFromLibrary(asset)}>
+                          {importingAssetId === asset.assetId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} 참고 미디어로 추가
+                        </Button>
                       </div>
-                    )}
-                    <div className="p-3">
-                      <p className="text-xs font-bold truncate">{asset.assetName}</p>
-                      <p className="text-[11px] text-muted-foreground">{asset.assetType}</p>
-                      <Button className="mt-2 w-full" size="sm" disabled={busy || assets.length >= 6 || importingAssetId === asset.assetId} onClick={() => void addAssetFromLibrary(asset)}>
-                        {importingAssetId === asset.assetId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} 참고 미디어로 추가
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
