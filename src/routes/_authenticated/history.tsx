@@ -603,8 +603,142 @@ function VideoDetailCard({
             </pre>
           </div>
         )}
+
+        <RequestParams row={row} />
       </div>
     </section>
+  );
+}
+
+function ParamRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-3 border-b border-border/60 py-1.5 last:border-0">
+      <span className="w-40 shrink-0 text-[11px] font-semibold text-muted-foreground">{label}</span>
+      <span className="min-w-0 flex-1 break-all text-xs">{value}</span>
+    </div>
+  );
+}
+
+function RequestParams({ row }: { row: VideoRow }) {
+  const opts = (row.options ?? {}) as Record<string, any>;
+  const paths = Array.isArray(row.image_paths) ? (row.image_paths as string[]) : [];
+  const refs = Array.isArray(opts.references) ? (opts.references as any[]) : [];
+  const payload = {
+    workLabel: row.work_label,
+    mode: row.mode,
+    aspectRatio: row.aspect_ratio,
+    resolution: row.resolution,
+    durationSeconds: row.duration_seconds,
+    seed: row.seed,
+    finalPrompt: row.final_prompt,
+    rawPrompt: row.raw_prompt,
+    negativePrompt: row.negative_prompt,
+    imagePaths: paths,
+    options: opts,
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] font-semibold text-muted-foreground">
+          요청 파라미터 (Request parameters)
+        </div>
+        <button
+          type="button"
+          className="rounded-lg border px-2 py-1 text-[11px] font-medium hover:bg-background"
+          onClick={() => {
+            navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+            toast.success("요청 파라미터 복사됨");
+          }}
+        >
+          복사
+        </button>
+      </div>
+
+      <div className="mt-2">
+        <ParamRow label="Work label" value={row.work_label} />
+        <ParamRow label="Mode" value={row.mode} />
+        <ParamRow label="Aspect ratio" value={row.aspect_ratio ?? "-"} />
+        <ParamRow label="Resolution" value={row.resolution ?? "-"} />
+        <ParamRow
+          label="Duration"
+          value={row.duration_seconds ? `${row.duration_seconds}s` : "-"}
+        />
+        <ParamRow label="Seed" value={row.seed?.toString() ?? "auto"} />
+        <ParamRow
+          label="Output quantity"
+          value={opts.outputQuantity != null ? String(opts.outputQuantity) : "-"}
+        />
+        <ParamRow
+          label="Generate audio"
+          value={opts.generateAudio == null ? "-" : opts.generateAudio ? "on" : "off"}
+        />
+        <ParamRow
+          label="원문 그대로 모드"
+          value={opts.rawPromptMode == null ? "-" : opts.rawPromptMode ? "on" : "off"}
+        />
+        <ParamRow label="Prompt edited" value={row.prompt_edited ? "yes" : "no"} />
+        <ParamRow label="References" value={paths.length ? `${paths.length}개` : "없음"} />
+      </div>
+
+      {row.raw_prompt && (
+        <div className="mt-3">
+          <div className="mb-1 text-[11px] font-semibold text-muted-foreground">
+            입력 원문 프롬프트
+          </div>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-background p-2 text-xs">
+            {row.raw_prompt}
+          </pre>
+        </div>
+      )}
+
+      {row.negative_prompt && (
+        <div className="mt-3">
+          <div className="mb-1 text-[11px] font-semibold text-muted-foreground">
+            Negative prompt
+          </div>
+          <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-lg bg-background p-2 text-xs">
+            {row.negative_prompt}
+          </pre>
+        </div>
+      )}
+
+      {refs.length > 0 && (
+        <div className="mt-3 space-y-1">
+          <div className="text-[11px] font-semibold text-muted-foreground">참고 미디어</div>
+          {refs.map((r, i) => (
+            <div key={i} className="text-xs">
+              <span className="font-medium">{r.tag ?? `@image${i + 1}`}</span>{" "}
+              <span className="text-muted-foreground">
+                {[r.name, r.kind, Array.isArray(r.roles) ? r.roles.join(", ") : null]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {typeof opts.referenceRoleDirective === "string" && opts.referenceRoleDirective && (
+        <div className="mt-3">
+          <div className="mb-1 text-[11px] font-semibold text-muted-foreground">
+            자동 생성 레퍼런스 지시문
+          </div>
+          <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-lg bg-background p-2 text-xs">
+            {opts.referenceRoleDirective}
+          </pre>
+        </div>
+      )}
+
+      <details className="mt-3">
+        <summary className="cursor-pointer text-[11px] font-medium text-muted-foreground">
+          전체 JSON 보기
+        </summary>
+        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-background p-2 text-[11px]">
+          {JSON.stringify(payload, null, 2)}
+        </pre>
+      </details>
+    </div>
   );
 }
 
