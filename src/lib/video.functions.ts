@@ -3,6 +3,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { VideoTaskState } from "@/lib/video.server";
 
+export type TaskStateInfo = {
+  taskId: string;
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  error?: string | null;
+};
+
 const startSchema = z.object({
   workLabel: z.string().default("V1"),
   /** 영상 생성 프로바이더. 기본 엔진은 Seedance 2.0이다. */
