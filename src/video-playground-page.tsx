@@ -18,6 +18,7 @@ import { analyzeReferences, type ReferenceBrief } from "@/lib/reference-analysis
 import { composeVideoPrompt } from "@/lib/video-prompt.functions";
 import { checkVideoModelHealth } from "@/lib/video-health.functions";
 import { checkBytePlusAssetsConnection, getBytePlusAssets, importBytePlusAsset } from "@/lib/byteplus-assets.functions";
+import { BytePlusAssetPreview } from "@/components/byteplus-asset-preview";
 import { type BytePlusAssetGroup, type BytePlusAsset } from "@/lib/byteplus-assets.server";
 
 
@@ -520,13 +521,7 @@ export function VideoPlaygroundPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   {assetItems.map((asset) => (
                     <div key={asset.assetId} className="overflow-hidden rounded-lg border border-border bg-muted/30">
-                      {asset.thumbnailUrl ? (
-                        <img src={asset.thumbnailUrl} alt={asset.assetName} className="aspect-video w-full object-cover" />
-                      ) : (
-                        <div className="flex aspect-video w-full items-center justify-center bg-muted">
-                          <PackageOpen className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
+                      <BytePlusAssetPreview asset={asset} />
                       <div className="p-3">
                         <p className="text-xs font-bold truncate">{asset.assetName}</p>
                         <p className="text-[11px] text-muted-foreground">{asset.assetType}</p>
