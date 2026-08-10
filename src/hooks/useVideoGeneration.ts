@@ -133,6 +133,7 @@ export function useVideoGeneration(tenantId: string | null) {
     setRunning(true);
     setError(null);
     setRecoveryNotice(null);
+    setTaskStates([]);
     setRow(null);
     setCurrentId(null);
     try {
@@ -159,5 +160,5 @@ export function useVideoGeneration(tenantId: string | null) {
   }
 
 
-  return { run, running, row, currentId, error, recoveryNotice };
+  return { run, running, row, currentId, error, recoveryNotice, taskStates };
 }
