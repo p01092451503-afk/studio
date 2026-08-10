@@ -162,6 +162,10 @@ export async function probeBytePlusAssets(): Promise<SignedCallResult> {
     action: process.env["BYTEPLUS_ASSETS_LIST_ACTION"] ?? "ListAssetGroups",
     version: process.env["BYTEPLUS_ASSETS_VERSION"] ?? "2024-01-01",
     method: "POST",
-    body: { PageNumber: 1, PageSize: 10 },
+    body: {
+      Filter: { GroupType: "AIGC" },
+      PageNumber: 1,
+      PageSize: 10,
+    },
   });
 }
