@@ -189,6 +189,65 @@ export function VideoPlaygroundPage() {
   const seedanceHealth = health?.models.find((model) => model.provider === "seedance") ?? null;
   const busy = uploading || preparing || gen.running;
 
+  async function loadAssetGroups() {
+    setLibraryLoading(true);
+    setLibraryError(null);
+    try {
+      const result = await fetchAssets({ data: {} }) as { groups?: BytePlusAssetGroup[]; raw?: string };
+      setAssetGroups(result.groups ?? []);
+    } catch (error) {
+      setLibraryError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLibraryLoading(false);
+    }
+  }
+
+  async function loadAssetsForGroup(groupId: string) {
+    setSelectedGroupId(groupId);
+    setLibraryLoading(true);
+    setLibraryError(null);
+    try {
+      const result = await fetchAssets({ data: { groupId } }) as { assets?: BytePlusAsset[]; raw?: string };
+      setAssetItems(result.assets ?? []);
+    } catch (error) {
+      setLibraryError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLibraryLoading(false);
+    }
+  }
+
+  async function addAssetFromLibrary(asset: BytePlusAsset) {
+    if (!tenantId) return;
+    setImportingAssetId(asset.assetId);
+    try {
+      const result = await importAsset({ data: { assetId: asset.assetId, tenantId, name: asset.assetName || asset.assetId } }) as { path: string };
+      const kind: MediaKind = asset.assetType === "video" ? "video" : asset.assetType === "audio" ? "audio" : "image";
+      let imageCount = assets.filter((a) => a.kind === "image").length;
+      let videoCount = assets.filter((a) => a.kind === "video").length;
+      let audioCount = assets.filter((a) => a.kind === "audio").length;
+      if (kind === "image") imageCount += 1;
+      if (kind === "video") videoCount += 1;
+      if (kind === "audio") audioCount += 1;
+      const tag = `@${kind}${kind === "image" ? imageCount : kind === "video" ? videoCount : audioCount}`;
+      const added: MediaAsset = {
+        id: crypto.randomUUID(),
+        name: asset.assetName || asset.assetId,
+        kind,
+        tag,
+        roles: autoRolesFor(kind, kind === "image" ? imageCount - 1 : kind === "video" ? videoCount - 1 : audioCount - 1),
+        coverPath: kind === "audio" ? null : result.path,
+        framePaths: kind === "audio" ? [] : [result.path],
+      };
+      setAssets((current) => [...current, added].slice(0, 6));
+      toast.success(`${asset.assetName || asset.assetId}를 참고 미디어로 추가했습니다.`);
+      if (assets.length + 1 >= 6) setLibraryOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setImportingAssetId(null);
+    }
+  }
+
   async function uploadBlob(blob: Blob, name: string) {
     if (!tenantId) throw new Error("NO_TENANT");
     const path = `${tenantId}/video-refs/${Date.now()}-${crypto.randomUUID()}-${name}`;
@@ -196,6 +255,7 @@ export function VideoPlaygroundPage() {
     if (error) throw error;
     return path;
   }
+
 
   async function addMedia(files: FileList) {
     setUploading(true);
