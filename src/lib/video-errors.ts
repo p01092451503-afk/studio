@@ -89,6 +89,22 @@ function pick(raw: string): ErrorGuide {
       ],
     );
   }
+  if (
+    r.includes("inputimagesensitivecontentdetected") ||
+    r.includes("may contain real person") ||
+    r.includes("privacyinformation")
+  ) {
+    return guide(
+      "safety",
+      "Seedance rejected a reference image as containing a real person.",
+      "This is an input-image safety rejection, not a parameter problem. Replace the reference media and retry.",
+      [
+        "Reference media: replace photos or video frames showing real people's faces with illustrated or AI-generated characters.",
+        "Uploaded video: its extracted frames are checked too — a live-action clip is rejected the same way.",
+        "If a person must appear, use a stylized (webtoon/anime) rendering instead of a photographic face.",
+      ],
+    );
+  }
   if (r.includes("content_blocked")) return guide("safety", "This request cannot be generated.", "Revise the content and try again.", ["Positive prompt: remove explicit, exploitative, hateful, or graphically violent descriptions.", "Reference media: replace any image or video that may trigger the safety policy."]);
   if (r.includes("content_check")) return guide("provider", "The safety check is temporarily unavailable.", "Your request was not sent to the provider. Try again shortly.");
   if (r.includes("model is not available") || r.includes("invalid model")) return guide("model", "The selected video engine is unavailable.", "Run Model availability check, then select an available provider.", ["Provider and model ID: confirm the displayed model is marked Available.", "Mode: confirm the model supports text-to-video or image-to-video as selected."]);
