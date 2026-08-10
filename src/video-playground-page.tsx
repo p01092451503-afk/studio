@@ -378,6 +378,14 @@ export function VideoPlaygroundPage() {
             <div data-video-tour="references" className="space-y-3"><div className="flex items-center justify-between"><Label className="font-bold">{t("playground.references_label")}</Label>{assets.length > 0 && <Button variant="ghost" size="sm" onClick={() => setAssets([])}><Trash2 className="h-4 w-4" /> {t("playground.clear")}</Button>}</div>
               <label onDragEnter={handleReferenceDrag} onDragOver={handleReferenceDrag} onDragLeave={handleReferenceDrag} onDrop={handleReferenceDrop} className={`flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-5 text-center transition-colors ${dragActive ? "border-primary bg-primary-soft" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-primary-soft"}`}>{uploading ? <Loader2 className="h-7 w-7 animate-spin text-primary" /> : <ImagePlus className="h-7 w-7 text-primary" />}<span className="text-sm font-bold">{uploading ? t("playground.uploading") : dragActive ? t("playground.drop_files") : t("playground.add_files")}</span><span className="text-xs text-muted-foreground">{t("playground.files_hint")}</span>
                 <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">또는</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <Button variant="outline" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => { setLibraryOpen(true); void loadAssetGroups(); }}>
+                <FolderOpen className="h-4 w-4" /> BytePlus 자산 라이브러리에서 가져오기
+              </Button>
               {assets.length > 0 && <div className="space-y-3">
                 <p className="text-xs leading-relaxed text-muted-foreground">{t("playground.tag_hint_1")} <span className="font-semibold text-foreground">@image1 · @video1 · @audio1</span> {t("playground.tag_hint_2")}</p>
                 <div className="grid gap-3 sm:grid-cols-2">{assets.map((asset) => <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30">
@@ -444,6 +452,72 @@ export function VideoPlaygroundPage() {
         </div></aside>
       </div>
     </div><VideoOnboardingTour open={tourOpen} onOpenChange={setTourOpen} />
+    <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <PackageOpen className="h-5 w-5" /> BytePlus 자산 라이브러리
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {libraryLoading && (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" /> 불러오는 중...
+            </div>
+          )}
+          {libraryError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+              {libraryError}
+            </div>
+          )}
+          {!libraryLoading && !libraryError && !selectedGroupId && assetGroups.length === 0 && (
+            <div className="py-8 text-center text-sm text-muted-foreground">등록된 그룹이 없습니다.</div>
+          )}
+          {!libraryLoading && !libraryError && !selectedGroupId && assetGroups.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">그룹을 선택하면 해당 그룹의 자산을 볼 수 있습니다.</p>
+              <div className="grid gap-2">
+                {assetGroups.map((group) => (
+                  <Button key={group.groupId} variant="outline" className="justify-start" onClick={() => void loadAssetsForGroup(group.groupId)}>
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    {group.groupName}
+                    <span className="ml-auto text-xs text-muted-foreground">{group.groupType}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          {!libraryLoading && !libraryError && selectedGroupId && (
+            <div className="space-y-3">
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedGroupId(""); setAssetItems([]); }}>
+                ← 그룹 목록으로
+              </Button>
+              <p className="text-xs text-muted-foreground">원하는 자산을 선택하면 Storage에 복사 후 참고 미디어로 추가됩니다.</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {assetItems.map((asset) => (
+                  <div key={asset.assetId} className="overflow-hidden rounded-lg border border-border bg-muted/30">
+                    {asset.thumbnailUrl ? (
+                      <img src={asset.thumbnailUrl} alt={asset.assetName} className="aspect-video w-full object-cover" />
+                    ) : (
+                      <div className="flex aspect-video w-full items-center justify-center bg-muted">
+                        <PackageOpen className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <p className="text-xs font-bold truncate">{asset.assetName}</p>
+                      <p className="text-[11px] text-muted-foreground">{asset.assetType}</p>
+                      <Button className="mt-2 w-full" size="sm" disabled={busy || assets.length >= 6 || importingAssetId === asset.assetId} onClick={() => void addAssetFromLibrary(asset)}>
+                        {importingAssetId === asset.assetId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} 참고 미디어로 추가
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   </main>;
 }
 
