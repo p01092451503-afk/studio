@@ -51,6 +51,7 @@ export function useVideoGeneration(tenantId: string | null) {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recoveryNotice, setRecoveryNotice] = useState<string | null>(null);
+  const [taskStates, setTaskStates] = useState<TaskStateInfo[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Resume a job that was still running before this component remounted.
