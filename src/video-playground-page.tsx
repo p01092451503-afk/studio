@@ -160,8 +160,18 @@ export function VideoPlaygroundPage() {
   const [health, setHealth] = useState<Health | null>(null);
   const [checkingHealth, setCheckingHealth] = useState(false);
   const checkAssets = useServerFn(checkBytePlusAssetsConnection);
+  const fetchAssets = useServerFn(getBytePlusAssets);
+  const importAsset = useServerFn(importBytePlusAsset);
   const [assetsCheck, setAssetsCheck] = useState<AssetsCheck | null>(null);
   const [checkingAssets, setCheckingAssets] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [assetGroups, setAssetGroups] = useState<BytePlusAssetGroup[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [assetItems, setAssetItems] = useState<BytePlusAsset[]>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
+
 
 
   useEffect(() => { if (shouldStartVideoTour()) setTourOpen(true); }, []);
