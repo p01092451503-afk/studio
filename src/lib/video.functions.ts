@@ -299,6 +299,7 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
           completed_at: new Date().toISOString(),
         })
         .eq("id", row.id);
+      await cleanupRefs();
       return { status: "error" as const, error: friendly, recoveryNotice: null, taskStates };
     }
 
