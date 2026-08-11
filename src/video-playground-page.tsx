@@ -14,8 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { analyzeReferences, type ReferenceBrief } from "@/lib/reference-analysis.functions";
-import { composeVideoPrompt } from "@/lib/video-prompt.functions";
 import { checkVideoModelHealth } from "@/lib/video-health.functions";
 import { checkBytePlusAssetsConnection, getBytePlusAssets, importBytePlusAsset } from "@/lib/byteplus-assets.functions";
 import { BytePlusAssetPreview } from "@/components/byteplus-asset-preview";
@@ -57,31 +55,8 @@ const ROLE_OPTIONS: Record<MediaKind, ReferenceRoleId[]> = {
   audio: ["dialogue", "voice", "music", "sfx", "mood", "other"],
 };
 
-const ROLE_ORDER: ReferenceRoleId[] = [
-  "character", "costume", "prop", "background", "pose", "composition", "style",
-  "motion", "camera", "acting", "scene_flow",
-  "dialogue", "voice", "music", "sfx", "mood", "other",
-];
 
-const ROLE_SENTENCE: Record<ReferenceRoleId, (tags: string) => string> = {
-  character: (tags) => `Keep the character identity from ${tags} — same face, hair and body proportions.`,
-  costume: (tags) => `Dress the character in the outfit and clothing design shown in ${tags}.`,
-  prop: (tags) => `Include the props and objects shown in ${tags}.`,
-  background: (tags) => `Use ${tags} as the background environment and location.`,
-  pose: (tags) => `Follow the pose and body placement shown in ${tags}.`,
-  composition: (tags) => `Match the framing, shot size and composition of ${tags}.`,
-  style: (tags) => `Match the art style, color grading and finish of ${tags}.`,
-  motion: (tags) => `Follow the movement and action timing of ${tags}.`,
-  camera: (tags) => `Follow the camera movement and blocking of ${tags}.`,
-  acting: (tags) => `Follow the acting, facial expressions and emotion of ${tags}.`,
-  scene_flow: (tags) => `Follow the scene progression and shot order of ${tags}.`,
-  dialogue: (tags) => `Use the spoken lines heard in ${tags}.`,
-  voice: (tags) => `Match the voice tone and delivery of ${tags}.`,
-  music: (tags) => `Match the music and rhythm of ${tags}.`,
-  sfx: (tags) => `Include sound effects like the ones in ${tags}.`,
-  mood: (tags) => `Match the overall mood and atmosphere of ${tags}.`,
-  other: (tags) => `Refer to ${tags} for additional details.`,
-};
+
 
 function autoRolesFor(kind: MediaKind, indexInKind: number): ReferenceRoleId[] {
   if (kind === "video") return ["motion", "camera"];
@@ -92,14 +67,6 @@ function autoRolesFor(kind: MediaKind, indexInKind: number): ReferenceRoleId[] {
   return ["style"];
 }
 
-function buildRoleDirective(assets: MediaAsset[]) {
-  const sentences: string[] = [];
-  for (const role of ROLE_ORDER) {
-    const tags = assets.filter((asset) => asset.roles.includes(role)).map((asset) => asset.tag);
-    if (tags.length) sentences.push(ROLE_SENTENCE[role](tags.join(" and ")));
-  }
-  return sentences.join(" ");
-}
 
 
 
@@ -143,8 +110,6 @@ export function VideoPlaygroundPage() {
   const { t } = useTranslation();
   const { tenantId } = useTenant();
   const gen = useVideoGeneration(tenantId);
-  const analyze = useServerFn(analyzeReferences);
-  const compose = useServerFn(composeVideoPrompt);
   const checkHealth = useServerFn(checkVideoModelHealth);
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [prompt, setPrompt] = useState("");
@@ -153,7 +118,7 @@ export function VideoPlaygroundPage() {
   const [aspectRatio, setAspectRatio] = useState("9:16");
   const [outputQuantity, setOutputQuantity] = useState(1);
   const [generateAudio, setGenerateAudio] = useState(true);
-  const [rawPromptMode, setRawPromptMode] = useState(true);
+  
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -327,32 +292,12 @@ export function VideoPlaygroundPage() {
     setPreparing(true);
     try {
       const plainPrompt = prompt.trim();
-      const roleDirective = rawPromptMode ? "" : buildRoleDirective(assets);
-
-      let brief: ReferenceBrief | null = null;
-      // Raw mode = 사용자가 입력한 원문만 그대로 전송 (역할 지시문/AI 보정 모두 미적용)
-      let finalPrompt = rawPromptMode
-        ? plainPrompt
-        : roleDirective
-          ? `${roleDirective}\n${plainPrompt}`
-          : plainPrompt;
-      if (!rawPromptMode) {
-        if (studyPaths.length) {
-          brief = await analyze({ data: { imagePaths: studyPaths, intent: plainPrompt, hasVideoFrames: hasVideo } }) as ReferenceBrief;
-        }
-        const composed = await compose({ data: {
-          subject: [brief?.subject, roleDirective].filter(Boolean).join(" "), action: plainPrompt,
-          camera: [brief?.camera, brief?.motion].filter(Boolean).join("; "),
-          lighting: brief?.lighting ?? "", style: brief?.style ?? "",
-        } });
-        finalPrompt = composed.finalPrompt;
-      }
       await gen.run({
         workLabel: "Playground", provider: "seedance", mode: firstReference ? "i2v" : "t2v",
-        finalPrompt, negativePrompt: brief?.negative || undefined,
-         rawPrompt: plainPrompt, promptEdited: !rawPromptMode, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
+        finalPrompt: plainPrompt, negativePrompt: undefined,
+         rawPrompt: plainPrompt, promptEdited: false, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
          durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: studyPaths,
-        options: { playground: true, rawPromptMode, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo, referenceBrief: brief, referenceRoleDirective: roleDirective,
+        options: { playground: true, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo,
           references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, tag: asset.tag, roles: asset.roles, directlySuppliedToModel: asset.kind !== "audio" })) },
       });
 
@@ -406,22 +351,11 @@ export function VideoPlaygroundPage() {
                     <div role="group" aria-label={t("playground.role_group", { tag: asset.tag })} className="mt-2 flex flex-wrap gap-1">{ROLE_OPTIONS[asset.kind].map((role) => { const active = asset.roles.includes(role); return <button key={role} type="button" role="checkbox" aria-checked={active} disabled={busy} onClick={() => setAssets((current) => current.map((item) => item.id === asset.id ? { ...item, roles: active ? item.roles.filter((value) => value !== role) : [...item.roles, role] } : item))} className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}>{t(`playground.roles.${role}`)}</button>; })}</div>
                   </div>
                 </div>)}</div>
-                {!rawPromptMode && buildRoleDirective(assets) && <div className="rounded-lg border border-border bg-muted/20 p-3">
-                  <p className="text-xs font-bold">{t("playground.auto_directive_title")}</p>
-                  <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">{buildRoleDirective(assets)}</p>
-                </div>}
               </div>}
 
 
             </div>
             <div data-video-tour="prompt" className="space-y-3"><div className="flex justify-between"><Label htmlFor="video-prompt" className="font-bold">{t("playground.describe_label")}</Label><span className="text-xs text-muted-foreground">{prompt.length}/3000</span></div><Textarea id="video-prompt" value={prompt} maxLength={3000} disabled={busy} onChange={(event) => setPrompt(event.target.value)} placeholder={t("playground.describe_placeholder")} className="min-h-44 resize-y rounded-lg text-base leading-relaxed" /><p className="text-xs text-muted-foreground">{t("playground.describe_hint")}</p>
-              <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/20 p-3">
-                <div className="min-w-0"><p className="text-xs font-bold">{t("playground.raw_mode_title")}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{rawPromptMode ? t("playground.raw_mode_on") : t("playground.raw_mode_off")}</p></div>
-                <div className="flex shrink-0 gap-1 rounded-md border border-border bg-card p-1">
-                  <Button type="button" size="sm" variant={!rawPromptMode ? "default" : "ghost"} className="h-8 px-3 text-xs" disabled={busy} onClick={() => setRawPromptMode(false)}>{t("playground.ai_polish")}</Button>
-                  <Button type="button" size="sm" variant={rawPromptMode ? "default" : "ghost"} className="h-8 px-3 text-xs" disabled={busy} onClick={() => setRawPromptMode(true)}>{t("playground.raw_mode")}</Button>
-                </div>
-              </div>
             </div>
              <div className="space-y-5 rounded-lg border border-border bg-muted/20 p-4">
                <p className="text-xs leading-relaxed text-muted-foreground">{t("playground.defaults_hint_1")} <span className="font-semibold text-foreground">{t("playground.defaults_hint_bold")}</span> {t("playground.defaults_hint_2")}</p>

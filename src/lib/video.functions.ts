@@ -45,7 +45,7 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     if (!profile?.tenant_id) throw new Error("UNAUTHORIZED_NO_TENANT");
     const tenantId = profile.tenant_id as string;
 
-    const prompt = data.finalPrompt.trim();
+    const prompt = (data.rawPrompt?.trim() || data.finalPrompt.trim());
     const { DEFAULT_VIDEO_NEGATIVE_PROMPT } = await import("@/lib/video-constants");
     const negativePrompt = data.negativePrompt?.trim() || DEFAULT_VIDEO_NEGATIVE_PROMPT;
     if (!prompt) throw new Error("EMPTY_PROMPT");
