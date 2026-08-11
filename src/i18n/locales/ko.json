@@ -528,5 +528,35 @@
     "measuring": "측정 중…",
     "not_measured": "측정 전",
     "compare_note": "예상은 생성 요청값 기준, 실제는 저장된 결과물의 실측값 기준입니다. 저장 용량 실제값은 '실제 용량 측정'을 눌러야 스토리지에서 조회합니다."
+  },
+  "library": {
+    "test_button": "자산 연결 테스트",
+    "test_ok": "자산 라이브러리 연결 성공",
+    "test_fail": "자산 라이브러리 연결 실패 ({{code}})",
+    "test_error": "자산 라이브러리 연결 테스트 실패",
+    "signed_title": "BytePlus 자산 라이브러리 (AK/SK 서명)",
+    "or": "또는",
+    "import_button": "BytePlus 자산 라이브러리에서 가져오기",
+    "dialog_title": "BytePlus 자산 라이브러리",
+    "group_hint": "그룹을 선택하면 해당 그룹의 자산을 볼 수 있습니다.",
+    "group_loading": "그룹 목록을 불러오는 중...",
+    "group_error": "그룹 목록을 불러오지 못했습니다",
+    "group_empty": "등록된 그룹이 없습니다.",
+    "back_to_groups": "← 그룹 목록으로",
+    "asset_hint": "원하는 자산을 선택하면 Storage에 복사 후 참고 미디어로 추가됩니다.",
+    "asset_loading": "자산 목록을 불러오는 중...",
+    "asset_error": "자산 목록을 불러오지 못했습니다",
+    "asset_empty": "이 그룹에 등록된 자산이 없습니다.",
+    "add_as_reference": "참고 미디어로 추가"
+  },
+  "task": {
+    "copy": "복사",
+    "status_title": "처리 상태",
+    "auto_refresh": "5초마다 자동으로 갱신됩니다.",
+    "queued": "대기",
+    "running": "실행 중",
+    "succeeded": "완료",
+    "failed": "실패",
+    "cancelled": "취소됨"
   }
 }
