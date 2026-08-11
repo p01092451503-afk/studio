@@ -317,7 +317,7 @@ export function VideoPlaygroundPage() {
           <Button variant="outline" size="icon" onClick={() => setTourOpen(true)} aria-label={t("playground.open_tour")}><CircleHelp className="h-4 w-4" /></Button></div>
       </header>
       {assetsCheck && <section className="mb-6 rounded-lg border border-border bg-card p-4 text-xs">
-        <div className="flex items-center gap-2">{assetsCheck.ok ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <AlertCircle className="h-4 w-4 text-muted-foreground" />}<span className="text-sm font-bold">BytePlus 자산 라이브러리 (AK/SK 서명)</span></div>
+        <div className="flex items-center gap-2">{assetsCheck.ok ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <AlertCircle className="h-4 w-4 text-muted-foreground" />}<span className="text-sm font-bold">{t("library.signed_title")}</span></div>
         <p className="mt-2 text-muted-foreground">host {assetsCheck.host} · region {assetsCheck.region} · service {assetsCheck.service} · action {assetsCheck.action} · HTTP {assetsCheck.status}</p>
         {!assetsCheck.ok && <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all rounded bg-muted p-3 text-muted-foreground">{assetsCheck.errorCode ? `${assetsCheck.errorCode}: ${assetsCheck.errorMessage ?? ""}` : assetsCheck.body}</pre>}
       </section>}
