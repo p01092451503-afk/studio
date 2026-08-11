@@ -36,6 +36,8 @@ import { explainVideoError } from "@/lib/video-errors";
 import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
+import { MyLibraryDialog } from "@/components/my-library-dialog";
+import { useSaveLibraryAsset, type LibraryAssetRow } from "@/hooks/useLibraryAssets";
 
 type MediaKind = "image" | "video" | "audio";
 type ReferenceRoleId =
