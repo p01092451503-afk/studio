@@ -40,7 +40,7 @@ export function AppSidebar() {
       items: [
         { title: t("sidebar.history"), url: "/history", icon: History },
         { title: t("sidebar.usage"), url: "/usage", icon: Wallet },
-        { title: "자산고 진단", url: "/asset-lab", icon: FlaskConical },
+        { title: "자산 진단", url: "/asset-lab", icon: FlaskConical },
       ],
     },
   ] as const;
