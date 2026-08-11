@@ -36,6 +36,8 @@ import { explainVideoError } from "@/lib/video-errors";
 import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
+import { MyLibraryDialog } from "@/components/my-library-dialog";
+import { useSaveLibraryAsset, type LibraryAssetRow } from "@/hooks/useLibraryAssets";
 
 type MediaKind = "image" | "video" | "audio";
 type ReferenceRoleId =
@@ -139,6 +141,9 @@ export function VideoPlaygroundPage() {
   const [assetItemsLoading, setAssetItemsLoading] = useState(false);
   const [assetItemsError, setAssetItemsError] = useState<string | null>(null);
   const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
+  const [myLibOpen, setMyLibOpen] = useState(false);
+  const saveLibraryAsset = useSaveLibraryAsset();
+
 
 
 
@@ -267,6 +272,26 @@ export function VideoPlaygroundPage() {
         duration: prepared.missingFigureNumbers.length ? 7000 : 4000,
       });
 
+      // 업로드한 참고 자료는 내 자산 라이브러리에 자동 보관한다 (오디오 제외).
+      if (tenantId) {
+        const storable = added.filter((asset) => asset.coverPath && asset.framePaths.length);
+        for (const asset of storable) {
+          try {
+            await saveLibraryAsset.mutateAsync({
+              tenantId,
+              name: asset.name,
+              kind: asset.kind === "video" ? "video" : "image",
+              coverPath: asset.coverPath as string,
+              framePaths: asset.framePaths,
+            });
+          } catch (saveError) {
+            console.warn("[library-autosave-failed]", saveError);
+          }
+        }
+        if (storable.length) toast.success(t("mylib.saved", { count: storable.length }));
+      }
+
+
     } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); }
     finally { setUploading(false); }
   }
@@ -287,8 +312,26 @@ export function VideoPlaygroundPage() {
     void addMedia(event.dataTransfer.files);
   }
 
+  function addFromMyLibrary(asset: LibraryAssetRow) {
+    if (assets.length >= 6) return;
+    const kind: MediaKind = asset.kind === "video" ? "video" : "image";
+    const indexInKind = assets.filter((item) => item.kind === kind).length;
+    const added: MediaAsset = {
+      id: crypto.randomUUID(),
+      name: asset.name,
+      kind,
+      tag: `@${kind}${indexInKind + 1}`,
+      roles: autoRolesFor(kind, indexInKind),
+      coverPath: asset.cover_path,
+      framePaths: asset.frame_paths.length ? asset.frame_paths : [asset.cover_path],
+    };
+    setAssets((current) => [...current, added].slice(0, 6));
+    toast.success(t("mylib.added", { name: asset.name }));
+  }
+
   async function generate() {
     if (!prompt.trim()) return toast.error(t("playground.toast_need_prompt"));
+
     setPreparing(true);
     try {
       const plainPrompt = prompt.trim();
@@ -335,6 +378,9 @@ export function VideoPlaygroundPage() {
                 <span className="text-xs text-muted-foreground">{t("library.or")}</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
+              <Button variant="default" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => setMyLibOpen(true)}>
+                <PackageOpen className="h-4 w-4" /> {t("mylib.open_button")}
+              </Button>
               <Button variant="outline" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => { setLibraryOpen(true); void loadAssetGroups(); }}>
                 <FolderOpen className="h-4 w-4" /> {t("library.import_button")}
               </Button>
@@ -393,6 +439,7 @@ export function VideoPlaygroundPage() {
         </div></aside>
       </div>
     </div><VideoOnboardingTour open={tourOpen} onOpenChange={setTourOpen} />
+    <MyLibraryDialog open={myLibOpen} onOpenChange={setMyLibOpen} disabled={busy || assets.length >= 6} onPick={(asset) => { addFromMyLibrary(asset); if (assets.length + 1 >= 6) setMyLibOpen(false); }} />
     <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>

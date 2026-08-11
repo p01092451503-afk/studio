@@ -253,6 +253,63 @@ export type Database = {
           },
         ]
       }
+      library_assets: {
+        Row: {
+          character_id: string | null
+          cover_path: string
+          created_at: string
+          created_by: string | null
+          frame_paths: Json
+          id: string
+          kind: string
+          name: string
+          source_path: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          character_id?: string | null
+          cover_path: string
+          created_at?: string
+          created_by?: string | null
+          frame_paths?: Json
+          id?: string
+          kind?: string
+          name: string
+          source_path?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          character_id?: string | null
+          cover_path?: string
+          created_at?: string
+          created_by?: string | null
+          frame_paths?: Json
+          id?: string
+          kind?: string
+          name?: string
+          source_path?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_assets_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_assets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       panels: {
         Row: {
           caption: string | null

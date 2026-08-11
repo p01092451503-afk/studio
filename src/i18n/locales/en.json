@@ -559,5 +559,20 @@
     "succeeded": "Done",
     "failed": "Failed",
     "cancelled": "Cancelled"
+  },
+  "mylib": {
+    "dialog_title": "My asset library",
+    "hint": "Uploaded references are saved automatically. Organize them per character and reuse them anytime.",
+    "open_button": "Pick from my asset library",
+    "filter_label": "Character",
+    "filter_all": "All",
+    "unassigned": "Unassigned",
+    "loading": "Loading assets...",
+    "load_error": "Could not load your assets.",
+    "empty": "No saved assets yet. Uploaded references will appear here automatically.",
+    "use": "Use as reference",
+    "delete": "Delete",
+    "saved": "Saved {{count}} file(s) to your library.",
+    "added": "Added {{name}} as a reference."
   }
 }
