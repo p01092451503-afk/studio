@@ -332,11 +332,11 @@ export function VideoPlaygroundPage() {
                 <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
               <div className="flex items-center gap-2">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">또는</span>
+                <span className="text-xs text-muted-foreground">{t("library.or")}</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
               <Button variant="outline" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => { setLibraryOpen(true); void loadAssetGroups(); }}>
-                <FolderOpen className="h-4 w-4" /> BytePlus 자산 라이브러리에서 가져오기
+                <FolderOpen className="h-4 w-4" /> {t("library.import_button")}
               </Button>
               {assets.length > 0 && <div className="space-y-3">
                 <p className="text-xs leading-relaxed text-muted-foreground">{t("playground.tag_hint_1")} <span className="font-semibold text-foreground">@image1 · @video1 · @audio1</span> {t("playground.tag_hint_2")}</p>
