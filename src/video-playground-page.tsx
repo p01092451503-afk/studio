@@ -312,8 +312,26 @@ export function VideoPlaygroundPage() {
     void addMedia(event.dataTransfer.files);
   }
 
+  function addFromMyLibrary(asset: LibraryAssetRow) {
+    if (assets.length >= 6) return;
+    const kind: MediaKind = asset.kind === "video" ? "video" : "image";
+    const indexInKind = assets.filter((item) => item.kind === kind).length;
+    const added: MediaAsset = {
+      id: crypto.randomUUID(),
+      name: asset.name,
+      kind,
+      tag: `@${kind}${indexInKind + 1}`,
+      roles: autoRolesFor(kind, indexInKind),
+      coverPath: asset.cover_path,
+      framePaths: asset.frame_paths.length ? asset.frame_paths : [asset.cover_path],
+    };
+    setAssets((current) => [...current, added].slice(0, 6));
+    toast.success(t("mylib.added", { name: asset.name }));
+  }
+
   async function generate() {
     if (!prompt.trim()) return toast.error(t("playground.toast_need_prompt"));
+
     setPreparing(true);
     try {
       const plainPrompt = prompt.trim();
