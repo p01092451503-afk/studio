@@ -140,6 +140,7 @@ export function VideoPlaygroundPage() {
   const [groupError, setGroupError] = useState<string | null>(null);
   const [assetItemsLoading, setAssetItemsLoading] = useState(false);
   const [assetItemsError, setAssetItemsError] = useState<string | null>(null);
+  const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
   const [myLibOpen, setMyLibOpen] = useState(false);
   const saveLibraryAsset = useSaveLibraryAsset();
 
