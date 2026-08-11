@@ -27,6 +27,25 @@ export function toPublicFetchOrigin(requestOrigin: string): string {
   }
 }
 
+export function assertPublicFetchUrl(rawUrl: string): void {
+  const url = new URL(rawUrl);
+  const host = url.hostname.toLowerCase();
+  const isPrivateIpv4 =
+    /^10\./.test(host) ||
+    /^127\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+  if (
+    url.protocol !== "https:" ||
+    host === "localhost" ||
+    host === "0.0.0.0" ||
+    host === "::1" ||
+    isPrivateIpv4
+  ) {
+    throw new Error(`REF_PUBLIC_ORIGIN_UNRESOLVED: ${url.origin}`);
+  }
+}
+
 export async function getPublicFetchOrigin(): Promise<string> {
   const { getRequestHeader, getRequestUrl } = await import("@tanstack/react-start/server");
   // 배포 프록시 뒤에서는 내부 Host 가 localhost:8080으로 보일 수 있다.
@@ -47,5 +66,11 @@ export async function getPublicFetchOrigin(): Promise<string> {
   const referer = getRequestHeader("referer");
   if (referer) return toPublicFetchOrigin(new URL(referer).origin);
 
-  return toPublicFetchOrigin(forwardedOrigin);
+  const previewHost = process.env["LOVABLE_PREVIEW_HOST"]?.trim();
+  if (previewHost) {
+    const previewOrigin = previewHost.includes("://") ? previewHost : `https://${previewHost}`;
+    return toPublicFetchOrigin(new URL(previewOrigin).origin);
+  }
+
+  throw new Error(`REF_PUBLIC_ORIGIN_UNRESOLVED: ${forwardedOrigin}`);
 }
