@@ -28,10 +28,24 @@ export function toPublicFetchOrigin(requestOrigin: string): string {
 }
 
 export async function getPublicFetchOrigin(): Promise<string> {
-  const { getRequestUrl } = await import("@tanstack/react-start/server");
+  const { getRequestHeader, getRequestUrl } = await import("@tanstack/react-start/server");
   // 배포 프록시 뒤에서는 내부 Host 가 localhost:8080으로 보일 수 있다.
   // x-forwarded-host를 사용해야 외부에서 실제 접근 가능한 프로젝트 도메인을 얻는다.
-  return toPublicFetchOrigin(
-    new URL(getRequestUrl({ xForwardedHost: true, xForwardedProto: true })).origin,
-  );
+  const forwardedOrigin = new URL(
+    getRequestUrl({ xForwardedHost: true, xForwardedProto: true }),
+  ).origin;
+  const forwardedHost = new URL(forwardedOrigin).hostname;
+  if (forwardedHost !== "localhost" && forwardedHost !== "127.0.0.1") {
+    return toPublicFetchOrigin(forwardedOrigin);
+  }
+
+  // 서버 함수의 내부 RPC가 forwarded host도 localhost로 덮는 환경에서는
+  // 브라우저가 보낸 Origin/Referer가 실제 공개 프로젝트 주소다.
+  const browserOrigin = getRequestHeader("origin");
+  if (browserOrigin) return toPublicFetchOrigin(new URL(browserOrigin).origin);
+
+  const referer = getRequestHeader("referer");
+  if (referer) return toPublicFetchOrigin(new URL(referer).origin);
+
+  return toPublicFetchOrigin(forwardedOrigin);
 }
