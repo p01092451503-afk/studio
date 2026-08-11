@@ -354,7 +354,13 @@ function AssetLabPage() {
           <Button
             size="sm"
             disabled={!!busy}
-            onClick={() => runProbe("createGroup", { GroupName: groupName, GroupType: "AIGC" }, "그룹 생성 후보")}
+            onClick={() =>
+              runProbe(
+                "createGroup",
+                { Name: groupName, GroupName: groupName, GroupType: "AIGC" },
+                "그룹 생성 후보",
+              )
+            }
           >
             {spin("createGroup")} 그룹 생성 후보 시험
           </Button>
