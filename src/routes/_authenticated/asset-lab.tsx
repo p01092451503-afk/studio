@@ -318,7 +318,7 @@ function AssetLabPage() {
     <main className="mx-auto w-full max-w-4xl space-y-4 p-4 md:p-6">
       <header className="space-y-1">
         <h1 className="text-xl font-black flex items-center gap-2">
-          <FlaskConical className="h-5 w-5" /> 자산고 진단 콘솔
+          <FlaskConical className="h-5 w-5" /> 자산 진단 콘솔
         </h1>
         <p className="text-sm text-muted-foreground">
           Phase 0(스펙 확정) + Phase 1(왕복 1회)을 이 화면에서 그대로 수행합니다. 1→2→3단계를 완료하면 asset:// ID를
