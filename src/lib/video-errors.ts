@@ -119,6 +119,17 @@ function pick(raw: string): ErrorGuide {
   if (r.includes("signed_url_failed")) return guide("storage", "The reference image could not be loaded.", "Remove the reference, upload it again, and retry.", ["Reference role: confirm a First frame is assigned for image-to-video.", "File: use a supported JPG, PNG, or MP4 that can be previewed in the studio."]);
   if (r.includes("storage_upload_failed") || r.includes("fetch_video_failed")) return guide("storage", "The generated video could not be saved.", "The generation may have completed, but result storage failed. Retry once; if it repeats, contact the workspace administrator.");
   if (r.includes("no_task_id")) return guide("provider", "The provider did not return a task ID.", "Check the request settings, then retry.", ["Mode: use image-to-video only when a valid first frame is attached.", "Prompt: shorten unusually long text.", "Model version: confirm the configured version still exists."]);
+  if (r.includes("ref_public_url_not_image") || r.includes("ref_public_url_unreachable") || r.includes("unsupportedimageformat")) {
+    return guide(
+      "storage",
+      "참고 이미지를 Seedance가 내려받지 못했습니다 (이미지 대신 로그인/오류 페이지가 전달됨).",
+      "프롬프트나 파라미터 문제가 아닙니다. 참고 이미지를 다시 업로드한 뒤 재시도해 주세요. 반복되면 관리자에게 공개 참고 이미지 주소 설정을 확인하도록 요청하세요.",
+      [
+        "참고 이미지: JPG 또는 PNG 원본으로 다시 업로드해 주세요.",
+        "미리보기 환경에서는 참고 이미지 주소가 로그인 화면으로 넘어갈 수 있어, 안정 공개 주소가 사용되도록 수정되었습니다.",
+      ],
+    );
+  }
   if (r.includes("http_400") || r.includes("http_422") || r.includes("validation") || r.includes("empty_prompt")) return guide("input", "The provider rejected one or more request parameters.", "Review the request values below and try again.", ["Positive prompt: required, maximum 4,000 characters.", "Negative prompt: maximum 2,000 characters.", "Duration: 3–12 seconds; try 5 seconds for widest compatibility.", "Resolution: try 720p.", "Aspect ratio: try 16:9 or 9:16.", "Image-to-video: attach a valid First frame; remove it for a text-only test."]);
   if (r.includes("http_401") || r.includes("http_403") || r.includes("unauthorized") || r.includes("forbidden")) return guide("authentication", "The provider rejected authentication or access.", "Ask an administrator to verify the connection, permissions, and selected model access.");
   if (r.includes("http_404")) return guide("model", "The configured model or endpoint was not found.", "Run Model availability check and verify the model / endpoint ID.");
