@@ -211,7 +211,7 @@ export function VideoPlaygroundPage() {
         framePaths: kind === "audio" ? [] : [result.path],
       };
       setAssets((current) => [...current, added].slice(0, 6));
-      toast.success(`${asset.assetName || asset.assetId}를 참고 미디어로 추가했습니다.`);
+      toast.success(t("library.added", { name: asset.assetName || asset.assetId }));
       if (assets.length + 1 >= 6) setLibraryOpen(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
@@ -313,11 +313,11 @@ export function VideoPlaygroundPage() {
           <h1 className="mt-2 text-3xl font-extrabold">{t("playground.title")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("playground.subtitle")}</p></div>
         <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => void checkHealth({ data: undefined }).then((result) => { setHealth(result as Health); toast.success(t("playground.toast_ark_ok")); }).catch((error) => { if (!recoverStaleServerFunction(error)) toast.error(t("playground.toast_ark_fail")); })} disabled={checkingHealth}><RefreshCw className={checkingHealth ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> {t("playground.validate")}</Button><span className="rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground">{health ? t("playground.engines_ready", { count: readyCount }) : t("playground.checking_engines")}</span>
-          <Button variant="outline" size="sm" disabled={checkingAssets} onClick={() => { setCheckingAssets(true); void checkAssets({ data: undefined }).then((result) => { const r = result as AssetsCheck; setAssetsCheck(r); if (r.ok) toast.success("자산 라이브러리 연결 성공"); else toast.error(`자산 라이브러리 연결 실패 (${r.errorCode ?? r.status})`); }).catch((error) => { if (!recoverStaleServerFunction(error)) toast.error("자산 라이브러리 연결 테스트 실패"); }).finally(() => setCheckingAssets(false)); }}><RefreshCw className={checkingAssets ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> 자산 연결 테스트</Button>
+          <Button variant="outline" size="sm" disabled={checkingAssets} onClick={() => { setCheckingAssets(true); void checkAssets({ data: undefined }).then((result) => { const r = result as AssetsCheck; setAssetsCheck(r); if (r.ok) toast.success(t("library.test_ok")); else toast.error(t("library.test_fail", { code: r.errorCode ?? r.status })); }).catch((error) => { if (!recoverStaleServerFunction(error)) toast.error(t("library.test_error")); }).finally(() => setCheckingAssets(false)); }}><RefreshCw className={checkingAssets ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> {t("library.test_button")}</Button>
           <Button variant="outline" size="icon" onClick={() => setTourOpen(true)} aria-label={t("playground.open_tour")}><CircleHelp className="h-4 w-4" /></Button></div>
       </header>
       {assetsCheck && <section className="mb-6 rounded-lg border border-border bg-card p-4 text-xs">
-        <div className="flex items-center gap-2">{assetsCheck.ok ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <AlertCircle className="h-4 w-4 text-muted-foreground" />}<span className="text-sm font-bold">BytePlus 자산 라이브러리 (AK/SK 서명)</span></div>
+        <div className="flex items-center gap-2">{assetsCheck.ok ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <AlertCircle className="h-4 w-4 text-muted-foreground" />}<span className="text-sm font-bold">{t("library.signed_title")}</span></div>
         <p className="mt-2 text-muted-foreground">host {assetsCheck.host} · region {assetsCheck.region} · service {assetsCheck.service} · action {assetsCheck.action} · HTTP {assetsCheck.status}</p>
         {!assetsCheck.ok && <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all rounded bg-muted p-3 text-muted-foreground">{assetsCheck.errorCode ? `${assetsCheck.errorCode}: ${assetsCheck.errorMessage ?? ""}` : assetsCheck.body}</pre>}
       </section>}
@@ -332,11 +332,11 @@ export function VideoPlaygroundPage() {
                 <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
               <div className="flex items-center gap-2">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">또는</span>
+                <span className="text-xs text-muted-foreground">{t("library.or")}</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
               <Button variant="outline" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => { setLibraryOpen(true); void loadAssetGroups(); }}>
-                <FolderOpen className="h-4 w-4" /> BytePlus 자산 라이브러리에서 가져오기
+                <FolderOpen className="h-4 w-4" /> {t("library.import_button")}
               </Button>
               {assets.length > 0 && <div className="space-y-3">
                 <p className="text-xs leading-relaxed text-muted-foreground">{t("playground.tag_hint_1")} <span className="font-semibold text-foreground">@image1 · @video1 · @audio1</span> {t("playground.tag_hint_2")}</p>
@@ -370,11 +370,11 @@ export function VideoPlaygroundPage() {
         </section>
         <aside data-video-tour="result" className="rounded-lg border border-border bg-card p-6"><h2 className="font-bold">{t("playground.result_title")}</h2><p className="mt-1 text-xs text-muted-foreground">{t("playground.result_sub")}</p><div className="mt-5 space-y-4">
           {gen.running && <EmptyResult loading />}{gen.recoveryNotice && <div className="flex gap-2 rounded-lg border border-primary/30 bg-primary-soft p-4 text-xs"><RefreshCw className="h-4 w-4 animate-spin text-primary" /><p>{gen.recoveryNotice}</p></div>}{gen.error && <ErrorCard message={gen.error} />}{gen.row?.results?.map((result) => <ResultVideo key={result.id} path={result.storage_path} />)}{!gen.running && !gen.row && !gen.error && <EmptyResult />}
-          {gen.row?.task_id && <div className="rounded-lg border border-border p-3 text-xs"><div className="font-bold text-muted-foreground">Task ID (ARK)</div><div className="mt-1 flex items-center gap-2"><code className="flex-1 break-all">{gen.row.task_id}</code><button type="button" className="rounded-md border px-2 py-1 font-medium" onClick={() => navigator.clipboard.writeText(gen.row?.task_id ?? "")}>복사</button></div></div>}
+          {gen.row?.task_id && <div className="rounded-lg border border-border p-3 text-xs"><div className="font-bold text-muted-foreground">Task ID (ARK)</div><div className="mt-1 flex items-center gap-2"><code className="flex-1 break-all">{gen.row.task_id}</code><button type="button" className="rounded-md border px-2 py-1 font-medium" onClick={() => navigator.clipboard.writeText(gen.row?.task_id ?? "")}>{t("task.copy")}</button></div></div>}
           {gen.taskStates.length > 0 && (
             <div className="rounded-lg border border-border p-3 text-xs">
               <div className="mb-2 flex items-center gap-2 font-bold text-muted-foreground">
-                처리 상태
+                {t("task.status_title")}
                 {gen.running && <RefreshCw className="h-3 w-3 animate-spin text-primary" />}
               </div>
               <ul className="space-y-1.5">
@@ -386,7 +386,7 @@ export function VideoPlaygroundPage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-[11px] text-muted-foreground">5초마다 자동으로 갱신됩니다.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">{t("task.auto_refresh")}</p>
             </div>
           )}
           {gen.row?.final_prompt && <details className="rounded-lg border border-border p-4 text-xs"><summary className="cursor-pointer font-bold">{t("playground.view_prompt")}</summary><p className="mt-3 whitespace-pre-wrap leading-relaxed text-muted-foreground">{gen.row.final_prompt}</p></details>}
@@ -397,26 +397,26 @@ export function VideoPlaygroundPage() {
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <PackageOpen className="h-5 w-5" /> BytePlus 자산 라이브러리
+            <PackageOpen className="h-5 w-5" /> {t("library.dialog_title")}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {!selectedGroupId && (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">그룹을 선택하면 해당 그룹의 자산을 볼 수 있습니다.</p>
+              <p className="text-xs text-muted-foreground">{t("library.group_hint")}</p>
               {groupLoading && (
                 <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" /> 그룹 목록을 불러오는 중...
+                  <Loader2 className="h-5 w-5 animate-spin" /> {t("library.group_loading")}
                 </div>
               )}
               {groupError && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
-                  <p className="font-bold">그룹 목록을 불러오지 못했습니다</p>
+                  <p className="font-bold">{t("library.group_error")}</p>
                   <p className="mt-1">{groupError}</p>
                 </div>
               )}
               {!groupLoading && !groupError && assetGroups.length === 0 && (
-                <div className="py-8 text-center text-sm text-muted-foreground">등록된 그룹이 없습니다.</div>
+                <div className="py-8 text-center text-sm text-muted-foreground">{t("library.group_empty")}</div>
               )}
               {!groupLoading && !groupError && assetGroups.length > 0 && (
                 <div className="grid gap-2">
@@ -434,22 +434,22 @@ export function VideoPlaygroundPage() {
           {selectedGroupId && (
             <div className="space-y-3">
               <Button variant="ghost" size="sm" disabled={assetItemsLoading} onClick={() => { setSelectedGroupId(""); setAssetItems([]); setAssetItemsError(null); }}>
-                ← 그룹 목록으로
+                {t("library.back_to_groups")}
               </Button>
-              <p className="text-xs text-muted-foreground">원하는 자산을 선택하면 Storage에 복사 후 참고 미디어로 추가됩니다.</p>
+              <p className="text-xs text-muted-foreground">{t("library.asset_hint")}</p>
               {assetItemsLoading && (
                 <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" /> 자산 목록을 불러오는 중...
+                  <Loader2 className="h-5 w-5 animate-spin" /> {t("library.asset_loading")}
                 </div>
               )}
               {assetItemsError && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
-                  <p className="font-bold">자산 목록을 불러오지 못했습니다</p>
+                  <p className="font-bold">{t("library.asset_error")}</p>
                   <p className="mt-1">{assetItemsError}</p>
                 </div>
               )}
               {!assetItemsLoading && !assetItemsError && assetItems.length === 0 && (
-                <div className="py-8 text-center text-sm text-muted-foreground">이 그룹에 등록된 자산이 없습니다.</div>
+                <div className="py-8 text-center text-sm text-muted-foreground">{t("library.asset_empty")}</div>
               )}
               {!assetItemsLoading && !assetItemsError && assetItems.length > 0 && (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -460,7 +460,7 @@ export function VideoPlaygroundPage() {
                         <p className="text-xs font-bold truncate">{asset.assetName}</p>
                         <p className="text-[11px] text-muted-foreground">{asset.assetType}</p>
                         <Button className="mt-2 w-full" size="sm" disabled={busy || assets.length >= 6 || importingAssetId === asset.assetId} onClick={() => void addAssetFromLibrary(asset)}>
-                          {importingAssetId === asset.assetId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} 참고 미디어로 추가
+                          {importingAssetId === asset.assetId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {t("library.add_as_reference")}
                         </Button>
                       </div>
                     </div>
@@ -480,14 +480,6 @@ function ErrorCard({ message }: { message: string }) { const info = explainVideo
 function ResultVideo({ path }: { path: string }) { const { t } = useTranslation(); const url = useSignedUrl("generation-outputs", path, 300); const [downloading, setDownloading] = useState(false); async function download() { setDownloading(true); try { const name = path.split("/").pop() || "pilotstudio-video.mp4"; const { data, error } = await supabase.storage.from("generation-outputs").createSignedUrl(path, 60, { download: name }); if (error || !data?.signedUrl) throw error || new Error("Download failed"); const link = document.createElement("a"); link.href = data.signedUrl; link.download = name; document.body.appendChild(link); link.click(); link.remove(); } catch (error) { toast.error(error instanceof Error ? error.message : t("playground.download_failed")); } finally { setDownloading(false); } } if (!url) return <div className="aspect-video animate-pulse rounded-lg bg-muted" />; return <div className="space-y-3"><video src={url} controls playsInline className="aspect-video w-full rounded-lg border border-border bg-foreground object-contain" /><Button variant="outline" className="w-full" onClick={download} disabled={downloading}>{downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {t("playground.download")}</Button></div>; }
 function ValidationItem({ label, value }: { label: string; value: ValidationState }) { const { t } = useTranslation(); const positive = value === "valid" || value === "available"; return <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2 text-xs"><span className="text-muted-foreground">{label}</span><span className="font-bold">{positive ? t("playground.state_ready") : value === "configured" ? t("playground.state_configured") : value === "not_configured" ? t("playground.state_not_set") : value === "invalid" || value === "unavailable" || value === "missing" ? t("playground.state_check") : t("playground.state_unknown")}</span></div>; }
 function OptionRow({ label, children }: { label: string; children: ReactNode }) { return <div className="space-y-2"><Label className="text-xs font-bold">{label}</Label><div className="rounded-md border border-border bg-card p-1">{children}</div></div>; }
-const TASK_STATUS_LABEL: Record<string, string> = {
-  queued: "대기",
-  running: "실행 중",
-  succeeded: "완료",
-  failed: "실패",
-  cancelled: "취소됨",
-};
-
 const TASK_STATUS_STYLE: Record<string, string> = {
   queued: "bg-muted text-muted-foreground",
   running: "bg-primary-soft text-primary",
@@ -497,11 +489,13 @@ const TASK_STATUS_STYLE: Record<string, string> = {
 };
 
 function TaskStatusPill({ status }: { status: string }) {
+  const { t } = useTranslation();
+  const label = t(`task.${status}`, { defaultValue: status });
   return (
     <span
       className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${TASK_STATUS_STYLE[status] ?? "bg-muted text-muted-foreground"}`}
     >
-      {TASK_STATUS_LABEL[status] ?? status}
+      {label}
     </span>
   );
 }

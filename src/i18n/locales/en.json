@@ -528,5 +528,36 @@
     "measuring": "Measuring…",
     "not_measured": "Not measured",
     "compare_note": "Estimates use requested values; actuals use measured values from stored results. Actual storage size is read from storage only when you press “Measure actual size”."
+  },
+  "library": {
+    "test_button": "Test asset connection",
+    "test_ok": "Asset library connected",
+    "test_fail": "Asset library connection failed ({{code}})",
+    "test_error": "Asset library connection test failed",
+    "signed_title": "BytePlus Asset Library (AK/SK signature)",
+    "or": "or",
+    "import_button": "Import from BytePlus Asset Library",
+    "dialog_title": "BytePlus Asset Library",
+    "group_hint": "Pick a group to browse its assets.",
+    "group_loading": "Loading groups...",
+    "group_error": "Could not load groups",
+    "group_empty": "No registered groups.",
+    "back_to_groups": "← Back to groups",
+    "asset_hint": "Selected assets are copied to storage and added as reference media.",
+    "asset_loading": "Loading assets...",
+    "asset_error": "Could not load assets",
+    "asset_empty": "No assets in this group.",
+    "add_as_reference": "Add as reference",
+    "added": "Added {{name}} as reference media."
+  },
+  "task": {
+    "copy": "Copy",
+    "status_title": "Status",
+    "auto_refresh": "Refreshes automatically every 5 seconds.",
+    "queued": "Queued",
+    "running": "Running",
+    "succeeded": "Done",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
   }
 }
