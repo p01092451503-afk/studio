@@ -109,6 +109,23 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
       }
       console.info("[seedance-ref-public-urls]", { videoId, publicUrls });
 
+      // ARK 로 보내기 전에, 해당 URL 이 실제 이미지로 응답하는지 미리 확인한다.
+      for (const u of publicUrls) {
+        try {
+          const probe = await fetch(u, { redirect: "manual" });
+          const ct = probe.headers.get("content-type") ?? "";
+          if (probe.status !== 200 || !/^image\//i.test(ct)) {
+            throw new Error(
+              `REF_PUBLIC_URL_NOT_IMAGE: status=${probe.status} content-type=${ct || "none"} url=${u}`,
+            );
+          }
+        } catch (probeErr) {
+          if (probeErr instanceof Error && probeErr.message.startsWith("REF_PUBLIC_URL_NOT_IMAGE")) throw probeErr;
+          throw new Error(`REF_PUBLIC_URL_UNREACHABLE: ${u}`);
+        }
+      }
+
+
       const provider = "seedance";
       let taskId: string;
       let model: string;
