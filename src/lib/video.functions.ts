@@ -87,7 +87,7 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     const refPublicKeys: string[] = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { getPublicFetchOrigin } = await import("@/lib/public-origin.server");
+       const { assertPublicFetchUrl, getPublicFetchOrigin } = await import("@/lib/public-origin.server");
       // 미리보기 도메인은 로그인 리다이렉트가 걸려 ARK 가 이미지를 못 받으므로 안정 공개 도메인을 쓴다.
       const origin = await getPublicFetchOrigin();
 
@@ -111,6 +111,7 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
 
       // ARK 로 보내기 전에, 해당 URL 이 실제 이미지로 응답하는지 미리 확인한다.
       for (const u of publicUrls) {
+         assertPublicFetchUrl(u);
         try {
           const probe = await fetch(u, { redirect: "manual" });
           const ct = probe.headers.get("content-type") ?? "";
