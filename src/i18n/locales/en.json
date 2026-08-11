@@ -547,7 +547,8 @@
     "asset_loading": "Loading assets...",
     "asset_error": "Could not load assets",
     "asset_empty": "No assets in this group.",
-    "add_as_reference": "Add as reference"
+    "add_as_reference": "Add as reference",
+    "added": "Added {{name}} as reference media."
   },
   "task": {
     "copy": "Copy",

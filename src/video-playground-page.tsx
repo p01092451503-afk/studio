@@ -211,7 +211,7 @@ export function VideoPlaygroundPage() {
         framePaths: kind === "audio" ? [] : [result.path],
       };
       setAssets((current) => [...current, added].slice(0, 6));
-      toast.success(`${asset.assetName || asset.assetId}를 참고 미디어로 추가했습니다.`);
+      toast.success(t("library.added", { name: asset.assetName || asset.assetId }));
       if (assets.length + 1 >= 6) setLibraryOpen(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
