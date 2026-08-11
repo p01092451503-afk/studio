@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { History, Film, Wallet } from "lucide-react";
+import { History, Film, Wallet, FlaskConical } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -40,6 +40,7 @@ export function AppSidebar() {
       items: [
         { title: t("sidebar.history"), url: "/history", icon: History },
         { title: t("sidebar.usage"), url: "/usage", icon: Wallet },
+        { title: "자산고 진단", url: "/asset-lab", icon: FlaskConical },
       ],
     },
   ] as const;
