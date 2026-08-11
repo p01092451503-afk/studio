@@ -165,6 +165,7 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
               taskIds,
               outputQuantity: data.outputQuantity,
               generateAudio: data.generateAudio,
+              refPublicKeys,
            },
         })
         .eq("id", videoId);
