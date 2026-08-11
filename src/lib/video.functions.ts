@@ -84,15 +84,29 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     if (insErr || !row) throw new Error(`DB_INSERT_VIDEO_FAILED: ${insErr?.message ?? ""}`);
     const videoId = row.id as string;
 
+    const refPublicKeys: string[] = [];
     try {
-      const signedUrls: string[] = [];
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { getRequestUrl } = await import("@tanstack/react-start/server");
+      const origin = new URL(getRequestUrl()).origin;
+
+      // ARK 는 토큰 없는 공개 URL 만 안정적으로 fetch 하므로, 참고 미디어의 임시 사본을
+      // 공개 엔드포인트(/api/public/seedance-ref/*)에서 서빙되는 키로 복사한다.
+      const publicUrls: string[] = [];
       for (const p of data.imagePaths) {
-        const { data: signed, error: sErr } = await supabase.storage
-          .from("character-refs")
-          .createSignedUrl(p, 3600);
-        if (sErr || !signed?.signedUrl) throw new Error(`SIGNED_URL_FAILED: ${p}`);
-        signedUrls.push(signed.signedUrl);
+        const { data: blob, error: dErr } = await supabaseAdmin.storage.from("character-refs").download(p);
+        if (dErr || !blob) throw new Error(`REF_DOWNLOAD_FAILED: ${p}`);
+        const ext = p.split(".").pop() || "png";
+        const key = `${tenantId}/${videoId}/${crypto.randomUUID()}.${ext}`;
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        const { error: uErr } = await supabaseAdmin.storage
+          .from("seedance-refs")
+          .upload(key, bytes, { contentType: blob.type || "image/png", upsert: true });
+        if (uErr) throw new Error(`REF_PUBLIC_UPLOAD_FAILED: ${key}`);
+        refPublicKeys.push(key);
+        publicUrls.push(`${origin}/api/public/seedance-ref/${key}`);
       }
+      console.info("[seedance-ref-public-urls]", { videoId, publicUrls });
 
       const provider = "seedance";
       let taskId: string;
@@ -108,9 +122,9 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
       });
 
       const { buildSeedanceText, createVideoTask } = await import("@/lib/video.server");
-      const useFirstFrame = signedUrls.length === 1;
-      const firstFrameUrl = useFirstFrame ? signedUrls[0] : null;
-      const referenceImageUrls = useFirstFrame ? [] : signedUrls;
+      const useFirstFrame = publicUrls.length === 1;
+      const firstFrameUrl = useFirstFrame ? publicUrls[0] : null;
+      const referenceImageUrls = useFirstFrame ? [] : publicUrls;
       const taskIds: string[] = [];
       let startedModel = "";
       for (let index = 0; index < data.outputQuantity; index += 1) {
