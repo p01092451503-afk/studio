@@ -55,31 +55,8 @@ const ROLE_OPTIONS: Record<MediaKind, ReferenceRoleId[]> = {
   audio: ["dialogue", "voice", "music", "sfx", "mood", "other"],
 };
 
-const ROLE_ORDER: ReferenceRoleId[] = [
-  "character", "costume", "prop", "background", "pose", "composition", "style",
-  "motion", "camera", "acting", "scene_flow",
-  "dialogue", "voice", "music", "sfx", "mood", "other",
-];
 
-const ROLE_SENTENCE: Record<ReferenceRoleId, (tags: string) => string> = {
-  character: (tags) => `Keep the character identity from ${tags} — same face, hair and body proportions.`,
-  costume: (tags) => `Dress the character in the outfit and clothing design shown in ${tags}.`,
-  prop: (tags) => `Include the props and objects shown in ${tags}.`,
-  background: (tags) => `Use ${tags} as the background environment and location.`,
-  pose: (tags) => `Follow the pose and body placement shown in ${tags}.`,
-  composition: (tags) => `Match the framing, shot size and composition of ${tags}.`,
-  style: (tags) => `Match the art style, color grading and finish of ${tags}.`,
-  motion: (tags) => `Follow the movement and action timing of ${tags}.`,
-  camera: (tags) => `Follow the camera movement and blocking of ${tags}.`,
-  acting: (tags) => `Follow the acting, facial expressions and emotion of ${tags}.`,
-  scene_flow: (tags) => `Follow the scene progression and shot order of ${tags}.`,
-  dialogue: (tags) => `Use the spoken lines heard in ${tags}.`,
-  voice: (tags) => `Match the voice tone and delivery of ${tags}.`,
-  music: (tags) => `Match the music and rhythm of ${tags}.`,
-  sfx: (tags) => `Include sound effects like the ones in ${tags}.`,
-  mood: (tags) => `Match the overall mood and atmosphere of ${tags}.`,
-  other: (tags) => `Refer to ${tags} for additional details.`,
-};
+
 
 function autoRolesFor(kind: MediaKind, indexInKind: number): ReferenceRoleId[] {
   if (kind === "video") return ["motion", "camera"];
