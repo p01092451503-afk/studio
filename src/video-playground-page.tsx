@@ -272,6 +272,26 @@ export function VideoPlaygroundPage() {
         duration: prepared.missingFigureNumbers.length ? 7000 : 4000,
       });
 
+      // 업로드한 참고 자료는 내 자산 라이브러리에 자동 보관한다 (오디오 제외).
+      if (tenantId) {
+        const storable = added.filter((asset) => asset.coverPath && asset.framePaths.length);
+        for (const asset of storable) {
+          try {
+            await saveLibraryAsset.mutateAsync({
+              tenantId,
+              name: asset.name,
+              kind: asset.kind === "video" ? "video" : "image",
+              coverPath: asset.coverPath as string,
+              framePaths: asset.framePaths,
+            });
+          } catch (saveError) {
+            console.warn("[library-autosave-failed]", saveError);
+          }
+        }
+        if (storable.length) toast.success(t("mylib.saved", { count: storable.length }));
+      }
+
+
     } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); }
     finally { setUploading(false); }
   }
