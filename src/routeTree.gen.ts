@@ -21,6 +21,7 @@ import { Route as AuthenticatedCharactersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedEpisodesIdRouteImport } from './routes/_authenticated/episodes.$id'
+import { Route as ApiPublicSeedanceRefSplatRouteImport } from './routes/api/public/seedance-ref.$'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -82,6 +83,12 @@ const AuthenticatedEpisodesIdRoute = AuthenticatedEpisodesIdRouteImport.update({
   path: '/episodes/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicSeedanceRefSplatRoute =
+  ApiPublicSeedanceRefSplatRouteImport.update({
+    id: '/api/public/seedance-ref/$',
+    path: '/api/public/seedance-ref/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/episodes/$id': typeof AuthenticatedEpisodesIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/api/public/seedance-ref/$': typeof ApiPublicSeedanceRefSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,6 +116,7 @@ export interface FileRoutesByTo {
   '/episodes/$id': typeof AuthenticatedEpisodesIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/api/public/seedance-ref/$': typeof ApiPublicSeedanceRefSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,6 +132,7 @@ export interface FileRoutesById {
   '/_authenticated/episodes/$id': typeof AuthenticatedEpisodesIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/api/public/seedance-ref/$': typeof ApiPublicSeedanceRefSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/episodes/$id'
     | '/projects/$id'
     | '/projects/'
+    | '/api/public/seedance-ref/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/episodes/$id'
     | '/projects/$id'
     | '/projects'
+    | '/api/public/seedance-ref/$'
   id:
     | '__root__'
     | '/'
@@ -165,12 +177,14 @@ export interface FileRouteTypes {
     | '/_authenticated/episodes/$id'
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/'
+    | '/api/public/seedance-ref/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicSeedanceRefSplatRoute: typeof ApiPublicSeedanceRefSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -259,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEpisodesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/seedance-ref/$': {
+      id: '/api/public/seedance-ref/$'
+      path: '/api/public/seedance-ref/$'
+      fullPath: '/api/public/seedance-ref/$'
+      preLoaderRoute: typeof ApiPublicSeedanceRefSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -293,17 +314,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicSeedanceRefSplatRoute: ApiPublicSeedanceRefSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
