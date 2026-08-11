@@ -100,8 +100,8 @@ export async function publishPublicRef(
   tenantId: string,
 ): Promise<{ url: string; key: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { getRequestUrl } = await import("@tanstack/react-start/server");
-  const origin = new URL(getRequestUrl()).origin;
+  const { getPublicFetchOrigin } = await import("@/lib/public-origin.server");
+  const origin = await getPublicFetchOrigin();
 
   const { data: blob, error } = await supabaseAdmin.storage
     .from("character-refs")

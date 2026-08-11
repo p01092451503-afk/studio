@@ -87,8 +87,9 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     const refPublicKeys: string[] = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { getRequestUrl } = await import("@tanstack/react-start/server");
-      const origin = new URL(getRequestUrl()).origin;
+      const { getPublicFetchOrigin } = await import("@/lib/public-origin.server");
+      // 미리보기 도메인은 로그인 리다이렉트가 걸려 ARK 가 이미지를 못 받으므로 안정 공개 도메인을 쓴다.
+      const origin = await getPublicFetchOrigin();
 
       // ARK 는 토큰 없는 공개 URL 만 안정적으로 fetch 하므로, 참고 미디어의 임시 사본을
       // 공개 엔드포인트(/api/public/seedance-ref/*)에서 서빙되는 키로 복사한다.
@@ -107,6 +108,23 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
         publicUrls.push(`${origin}/api/public/seedance-ref/${key}`);
       }
       console.info("[seedance-ref-public-urls]", { videoId, publicUrls });
+
+      // ARK 로 보내기 전에, 해당 URL 이 실제 이미지로 응답하는지 미리 확인한다.
+      for (const u of publicUrls) {
+        try {
+          const probe = await fetch(u, { redirect: "manual" });
+          const ct = probe.headers.get("content-type") ?? "";
+          if (probe.status !== 200 || !/^image\//i.test(ct)) {
+            throw new Error(
+              `REF_PUBLIC_URL_NOT_IMAGE: status=${probe.status} content-type=${ct || "none"} url=${u}`,
+            );
+          }
+        } catch (probeErr) {
+          if (probeErr instanceof Error && probeErr.message.startsWith("REF_PUBLIC_URL_NOT_IMAGE")) throw probeErr;
+          throw new Error(`REF_PUBLIC_URL_UNREACHABLE: ${u}`);
+        }
+      }
+
 
       const provider = "seedance";
       let taskId: string;
