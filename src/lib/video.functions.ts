@@ -260,6 +260,23 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { formatVideoFailureReport } = await import("@/lib/video-errors");
+
+    // 작업이 확정된 시점(done/error)에만 ARK 전송용 임시 공개 사본을 정리한다.
+    const rowOptions = row.options && typeof row.options === "object" && !Array.isArray(row.options)
+      ? (row.options as Record<string, unknown>)
+      : {};
+    const refPublicKeys = Array.isArray(rowOptions.refPublicKeys)
+      ? rowOptions.refPublicKeys.filter((v): v is string => typeof v === "string")
+      : [];
+    const cleanupRefs = async () => {
+      if (!refPublicKeys.length) return;
+      try {
+        await supabaseAdmin.storage.from("seedance-refs").remove(refPublicKeys);
+      } catch (e) {
+        console.warn("[seedance-ref-cleanup-failed]", e);
+      }
+    };
+
     const failureContext = {
       model: row.api_model ?? null,
       mode: row.mode ?? null,
