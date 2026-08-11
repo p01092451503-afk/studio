@@ -378,6 +378,9 @@ export function VideoPlaygroundPage() {
                 <span className="text-xs text-muted-foreground">{t("library.or")}</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
+              <Button variant="default" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => setMyLibOpen(true)}>
+                <PackageOpen className="h-4 w-4" /> {t("mylib.open_button")}
+              </Button>
               <Button variant="outline" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => { setLibraryOpen(true); void loadAssetGroups(); }}>
                 <FolderOpen className="h-4 w-4" /> {t("library.import_button")}
               </Button>
