@@ -439,6 +439,7 @@ export function VideoPlaygroundPage() {
         </div></aside>
       </div>
     </div><VideoOnboardingTour open={tourOpen} onOpenChange={setTourOpen} />
+    <MyLibraryDialog open={myLibOpen} onOpenChange={setMyLibOpen} disabled={busy || assets.length >= 6} onPick={(asset) => { addFromMyLibrary(asset); if (assets.length + 1 >= 6) setMyLibOpen(false); }} />
     <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
