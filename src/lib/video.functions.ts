@@ -344,6 +344,7 @@ export const pollVideoGeneration = createServerFn({ method: "POST" })
         .eq("id", row.id);
 
       void userId;
+      await cleanupRefs();
       return { status: "done" as const, error: null, taskStates };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
