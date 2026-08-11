@@ -87,8 +87,9 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     const refPublicKeys: string[] = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { getRequestUrl } = await import("@tanstack/react-start/server");
-      const origin = new URL(getRequestUrl()).origin;
+      const { getPublicFetchOrigin } = await import("@/lib/public-origin.server");
+      // 미리보기 도메인은 로그인 리다이렉트가 걸려 ARK 가 이미지를 못 받으므로 안정 공개 도메인을 쓴다.
+      const origin = await getPublicFetchOrigin();
 
       // ARK 는 토큰 없는 공개 URL 만 안정적으로 fetch 하므로, 참고 미디어의 임시 사본을
       // 공개 엔드포인트(/api/public/seedance-ref/*)에서 서빙되는 키로 복사한다.
