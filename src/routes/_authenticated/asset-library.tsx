@@ -288,8 +288,8 @@ function AssetLibraryPage() {
   return (
     <main className="mx-auto w-full max-w-5xl space-y-5 p-4 md:p-6">
       <header className="space-y-1">
-        <h1 className="flex items-center gap-2 text-xl font-black">
-          <Boxes className="h-5 w-5" /> {t("assetlib.title")}
+        <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight">
+          <Boxes className="h-7 w-7" /> {t("assetlib.title")}
         </h1>
         <p className="text-sm text-muted-foreground">
           {t("assetlib.subtitle")}

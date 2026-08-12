@@ -274,7 +274,7 @@ function UsagePage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">{t("usage.title")}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t("usage.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("usage.subtitle")}</p>
       </header>
 
