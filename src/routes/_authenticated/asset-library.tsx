@@ -386,11 +386,10 @@ function AssetLibraryPage() {
                     variant="ghost"
                     className="h-9 w-9"
                     aria-label="그룹 삭제"
-                    onClick={() => {
-                      deleteGroup.mutate(selectedGroup.id);
-                      setSelectedGroupId(null);
-                    }}
+                    disabled={deleteGroup.isPending}
+                    onClick={() => void handleDeleteGroup(selectedGroup.id)}
                   >
+
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
