@@ -39,6 +39,7 @@ import { extractVideoFrames } from "@/lib/videoFrames";
 import { MyLibraryDialog } from "@/components/my-library-dialog";
 import { AssetVaultDialog } from "@/components/asset-vault-dialog";
 import { type AssetRow } from "@/hooks/useAssetLibrary";
+import { drainPendingRefs } from "@/lib/pending-refs";
 import { useSaveLibraryAsset, type LibraryAssetRow } from "@/hooks/useLibraryAssets";
 
 type MediaKind = "image" | "video" | "audio";
@@ -151,6 +152,30 @@ export function VideoPlaygroundPage() {
 
 
   useEffect(() => { if (shouldStartVideoTour()) setTourOpen(true); }, []);
+  // 자산고에서 "영상 생성에 사용"으로 넘어온 자산을 참고 미디어로 자동 추가한다.
+  useEffect(() => {
+    const pending = drainPendingRefs();
+    if (pending.length === 0) return;
+    setAssets((current) => {
+      const next = [...current];
+      for (const ref of pending) {
+        if (next.length >= 6) break;
+        if (next.some((item) => item.coverPath === ref.storagePath)) continue;
+        const indexInKind = next.filter((item) => item.kind === ref.kind).length;
+        next.push({
+          id: crypto.randomUUID(),
+          name: ref.name,
+          kind: ref.kind,
+          tag: `@${ref.kind}${indexInKind + 1}`,
+          roles: autoRolesFor(ref.kind, indexInKind),
+          coverPath: ref.storagePath,
+          framePaths: [ref.storagePath],
+        });
+      }
+      return next;
+    });
+    toast.success(t("vault.added", { name: pending.map((ref) => ref.name).join(", ") }));
+  }, []);
   useEffect(() => {
     let active = true;
     const run = async () => { setCheckingHealth(true); try { const result = await checkHealth({ data: undefined }); if (active) setHealth(result as Health); } catch (error) { if (recoverStaleServerFunction(error)) return; if (active) setHealth(null); } finally { if (active) setCheckingHealth(false); } };
