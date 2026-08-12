@@ -196,6 +196,24 @@ function AssetLibraryPage() {
     }
   }
 
+  async function handleDeleteGroup(id: string) {
+    try {
+      await deleteGroup.mutateAsync(id);
+      if (selectedGroupId === id) setSelectedGroupId(null);
+      toast.success("그룹을 삭제했습니다.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "그룹 삭제 실패");
+    }
+  }
+
+  /** 실사 인증 실패 메시지를 짧은 한글 안내로 바꾼다. */
+  function friendlyVerifyError(raw: string) {
+    if (raw.includes("REALPERSON_ACTION_UNSUPPORTED") || raw.includes("InvalidActionOrVersion")) {
+      return "이 BytePlus 계정에는 실사 인물 인증(디지털 휴먼) API 권한이 없습니다. 지금은 'AIGC (일반 참조)' 그룹으로 진행해 주세요.";
+    }
+    return raw || "인증 세션 생성 실패";
+  }
+
   async function handleStartVerify(group: AssetGroupRow) {
     try {
       const res = (await startVerify.mutateAsync(group.id)) as {
@@ -204,7 +222,7 @@ function AssetLibraryPage() {
         message: string;
       };
       if (!res.ok) {
-        toast.error(res.message || "인증 세션 생성 실패");
+        toast.error(friendlyVerifyError(res.message));
         return;
       }
       if (res.h5Link) {
@@ -213,7 +231,7 @@ function AssetLibraryPage() {
         toast.message("세션은 생성됐지만 QR 링크가 응답에 없습니다. 로그를 확인하세요.");
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "인증 세션 생성 실패");
+      toast.error(friendlyVerifyError(e instanceof Error ? e.message : ""));
     }
   }
 
@@ -300,10 +318,15 @@ function AssetLibraryPage() {
               <p className="p-3 text-sm text-muted-foreground">아직 그룹이 없습니다.</p>
             )}
             {groups.map((group) => (
-              <button
+              <div
                 key={group.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedGroupId(group.id)}
-                className={`w-full rounded-lg border p-2.5 text-left transition-colors ${
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") setSelectedGroupId(group.id);
+                }}
+                className={`w-full cursor-pointer rounded-lg border p-2.5 text-left transition-colors ${
                   selectedGroupId === group.id
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-muted"
@@ -314,6 +337,19 @@ function AssetLibraryPage() {
                     {group.name}
                   </span>
                   {group.kind === "digital_human" && <VerifyBadge status={group.verify_status} />}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    aria-label="그룹 삭제"
+                    disabled={deleteGroup.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDeleteGroup(group.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <span>{group.kind === "digital_human" ? "디지털 휴먼" : "AIGC"}</span>
@@ -321,7 +357,7 @@ function AssetLibraryPage() {
                     <span className="text-amber-600">· 원격 미동기화</span>
                   )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </aside>
@@ -376,11 +412,10 @@ function AssetLibraryPage() {
                     variant="ghost"
                     className="h-9 w-9"
                     aria-label="그룹 삭제"
-                    onClick={() => {
-                      deleteGroup.mutate(selectedGroup.id);
-                      setSelectedGroupId(null);
-                    }}
+                    disabled={deleteGroup.isPending}
+                    onClick={() => void handleDeleteGroup(selectedGroup.id)}
                   >
+
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
