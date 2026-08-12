@@ -196,6 +196,16 @@ function AssetLibraryPage() {
     }
   }
 
+  async function handleDeleteGroup(id: string) {
+    try {
+      await deleteGroup.mutateAsync(id);
+      if (selectedGroupId === id) setSelectedGroupId(null);
+      toast.success("그룹을 삭제했습니다.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "그룹 삭제 실패");
+    }
+  }
+
   async function handleStartVerify(group: AssetGroupRow) {
     try {
       const res = (await startVerify.mutateAsync(group.id)) as {
