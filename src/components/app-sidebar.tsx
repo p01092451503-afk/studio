@@ -35,7 +35,7 @@ export function AppSidebar() {
       label: t("sidebar.group_studio"),
       items: [
         { title: t("sidebar.video"), url: "/video", icon: Film },
-        { title: "자산고", url: "/asset-library", icon: Boxes },
+        { title: t("sidebar.asset_library"), url: "/asset-library", icon: Boxes },
       ],
     },
     {
