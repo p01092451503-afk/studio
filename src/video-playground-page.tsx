@@ -404,6 +404,9 @@ export function VideoPlaygroundPage() {
               <Button variant="default" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => setMyLibOpen(true)}>
                 <PackageOpen className="h-4 w-4" /> {t("mylib.open_button")}
               </Button>
+              <Button variant="secondary" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => setVaultOpen(true)}>
+                <PackageOpen className="h-4 w-4" /> {t("vault.open_button")}
+              </Button>
               <Button variant="outline" size="sm" className="w-full" disabled={true}>
                 <FolderOpen className="h-4 w-4" /> {t("library.import_button")}
               </Button>
