@@ -112,6 +112,7 @@ function VerifyBadge({ status }: { status: string }) {
 }
 
 function AssetLibraryPage() {
+  const navigate = useNavigate();
   const { tenantId } = useTenant();
   const { data: groups = [], isLoading: groupsLoading } = useAssetGroups();
   const { data: characters = [] } = useCharacters();
