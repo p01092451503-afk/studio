@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // ═══════════════════════════════════════════════════════════════
 // 프로덕션 자산고 — 서버 함수 (DB 미러 + 원격 BytePlus orchestration)
 //
-// 진단 콘솔(asset-lab)의 probing 을 대체하는 정식 경로.
+// 자산고 정식 경로.
 // - DB 쓰기는 context.supabase(RLS) 로 테넌트 격리
 // - 원격 API 는 *.server 헬퍼로 (AK/SK 서명, 서버 전용)
 // - 확정 Action 이름은 .server 헬퍼가 .env 에서 읽는다
@@ -145,7 +145,7 @@ export const ingestAsset = createServerFn({ method: "POST" })
     if (gErr || !group) throw new Error("GROUP_NOT_FOUND");
     if (!group.remote_group_id) throw new Error("GROUP_NOT_SYNCED_REMOTE");
 
-    const { publishPublicRef } = await import("@/lib/asset-lab.server");
+    const { publishPublicRef } = await import("@/lib/asset-public-ref.server");
     const { ingestBytePlusAsset } = await import("@/lib/byteplus-assets.server");
 
     // 1) 공개 URL 발급
