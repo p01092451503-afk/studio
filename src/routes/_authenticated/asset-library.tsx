@@ -191,10 +191,16 @@ function AssetLibraryPage() {
 
   async function handleStartVerify(group: AssetGroupRow) {
     try {
-      const { h5Link } = (await startVerify.mutateAsync(group.id)) as {
+      const res = (await startVerify.mutateAsync(group.id)) as {
+        ok: boolean;
         h5Link: string;
+        message: string;
       };
-      if (h5Link) {
+      if (!res.ok) {
+        toast.error(res.message || "인증 세션 생성 실패");
+        return;
+      }
+      if (res.h5Link) {
         toast.success("인증 세션 생성 — QR 링크가 발급되었습니다.");
       } else {
         toast.message("세션은 생성됐지만 QR 링크가 응답에 없습니다. 로그를 확인하세요.");
