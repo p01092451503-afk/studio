@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -50,12 +52,12 @@ import {
 export const Route = createFileRoute("/_authenticated/asset-library")({
   head: () => ({
     meta: [
-      { title: "자산고 | 웹툰 영상 생성기" },
-      {
-        name: "description",
-        content:
-          "BytePlus Seedance 2.0 자산고를 관리합니다. 그룹 생성, 참조 이미지 입고, 실사 인물 인증, asset:// 영상 참조까지 한 화면에서.",
-      },
+      { title: i18n.t("assetlib.meta_title") },
+      { name: "description", content: i18n.t("assetlib.meta_desc") },
+      { property: "og:title", content: i18n.t("assetlib.meta_title") },
+      { property: "og:description", content: i18n.t("assetlib.meta_desc") },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AssetLibraryPage,
@@ -64,54 +66,57 @@ export const Route = createFileRoute("/_authenticated/asset-library")({
 const UNASSIGNED = "__unassigned__";
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   if (status === "ready")
     return (
       <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-600">
-        <CheckCircle2 className="h-3 w-3" /> 준비됨
+        <CheckCircle2 className="h-3 w-3" /> {t("assetlib.badge_ready")}
       </Badge>
     );
   if (status === "failed")
     return (
       <Badge variant="outline" className="gap-1 border-destructive/40 text-destructive">
-        <AlertCircle className="h-3 w-3" /> 실패
+        <AlertCircle className="h-3 w-3" /> {t("assetlib.badge_failed")}
       </Badge>
     );
   if (status === "draft")
     return (
       <Badge variant="outline" className="gap-1 text-muted-foreground">
-        임시
+        {t("assetlib.badge_draft")}
       </Badge>
     );
   return (
     <Badge variant="outline" className="gap-1 text-amber-600 border-amber-500/40">
-      <Clock className="h-3 w-3" /> 입고 중
+      <Clock className="h-3 w-3" /> {t("assetlib.badge_ingesting")}
     </Badge>
   );
 }
 
 function VerifyBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   if (status === "verified")
     return (
       <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-600">
-        <ShieldCheck className="h-3 w-3" /> 인증됨
+        <ShieldCheck className="h-3 w-3" /> {t("assetlib.verify_verified")}
       </Badge>
     );
   if (status === "pending")
     return (
       <Badge variant="outline" className="gap-1 text-amber-600 border-amber-500/40">
-        <Clock className="h-3 w-3" /> 인증 대기
+        <Clock className="h-3 w-3" /> {t("assetlib.verify_pending")}
       </Badge>
     );
   if (status === "failed")
     return (
       <Badge variant="outline" className="gap-1 border-destructive/40 text-destructive">
-        <AlertCircle className="h-3 w-3" /> 인증 실패
+        <AlertCircle className="h-3 w-3" /> {t("assetlib.verify_failed")}
       </Badge>
     );
   return null;
 }
 
 function AssetLibraryPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { tenantId } = useTenant();
   const { data: groups = [], isLoading: groupsLoading } = useAssetGroups();
@@ -171,18 +176,18 @@ function AssetLibraryPage() {
       if (row.remoteWarning) {
         const d = row.remoteDetail;
         const lines = [
-          `사유: ${row.remoteWarning}`,
+          `${t("assetlib.detail_reason")}: ${row.remoteWarning}`,
           d?.action ? `Action: ${d.action}` : null,
           d?.version ? `Version: ${d.version}` : null,
           d?.host ? `Host: ${d.host}${d.region ? ` (${d.region})` : ""}` : null,
-          typeof d?.status === "number" ? `HTTP 상태: ${d.status}` : null,
-          d?.errorCode ? `에러 코드: ${d.errorCode}` : null,
-          d?.errorMessage ? `에러 메시지: ${d.errorMessage}` : null,
+          typeof d?.status === "number" ? `${t("assetlib.detail_status")}: ${d.status}` : null,
+          d?.errorCode ? `${t("assetlib.detail_error_code")}: ${d.errorCode}` : null,
+          d?.errorMessage ? `${t("assetlib.detail_error_message")}: ${d.errorMessage}` : null,
           d?.requestId ? `RequestId: ${d.requestId}` : null,
-          d?.bodySnippet ? `응답: ${d.bodySnippet.slice(0, 200)}` : null,
+          d?.bodySnippet ? `${t("assetlib.detail_body")}: ${d.bodySnippet.slice(0, 200)}` : null,
         ].filter(Boolean) as string[];
         toast.warning(
-          "그룹은 만들어졌지만 BytePlus 원격 자산고 등록은 실패했습니다. 로컬 그룹으로만 사용됩니다.",
+          t("assetlib.toast_remote_failed"),
           {
             duration: 15000,
             description: (
@@ -193,21 +198,21 @@ function AssetLibraryPage() {
           },
         );
       } else {
-        toast.success("그룹이 생성되었습니다.");
+        toast.success(t("assetlib.toast_group_created"));
       }
 
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "그룹 생성 실패");
+      toast.error(e instanceof Error ? e.message : t("assetlib.toast_group_create_failed"));
     }
   }
 
   async function handleUploadAndIngest(file: File) {
     if (!tenantId) {
-      toast.error("테넌트를 확인할 수 없습니다.");
+      toast.error(t("assetlib.toast_no_tenant"));
       return;
     }
     if (!selectedGroup) {
-      toast.error("먼저 그룹을 선택하세요.");
+      toast.error(t("assetlib.toast_select_group_first"));
       return;
     }
     setUploading(true);
@@ -222,9 +227,9 @@ function AssetLibraryPage() {
         storagePath: path,
         name: file.name.replace(/\.[^.]+$/, ""),
       });
-      toast.success("입고 요청 완료 — 상태를 폴링하세요.");
+      toast.success(t("assetlib.toast_ingest_done"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "입고 실패");
+      toast.error(e instanceof Error ? e.message : t("assetlib.toast_ingest_failed"));
     } finally {
       setUploading(false);
     }
@@ -234,18 +239,18 @@ function AssetLibraryPage() {
     try {
       await deleteGroup.mutateAsync(id);
       if (selectedGroupId === id) setSelectedGroupId(null);
-      toast.success("그룹을 삭제했습니다.");
+      toast.success(t("assetlib.toast_group_deleted"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "그룹 삭제 실패");
+      toast.error(e instanceof Error ? e.message : t("assetlib.toast_group_delete_failed"));
     }
   }
 
   /** 실사 인증 실패 메시지를 짧은 한글 안내로 바꾼다. */
   function friendlyVerifyError(raw: string) {
     if (raw.includes("REALPERSON_ACTION_UNSUPPORTED") || raw.includes("InvalidActionOrVersion")) {
-      return "이 BytePlus 계정에는 실사 인물 인증(디지털 휴먼) API 권한이 없습니다. 지금은 'AIGC (일반 참조)' 그룹으로 진행해 주세요.";
+      return t("assetlib.toast_verify_no_perm");
     }
-    return raw || "인증 세션 생성 실패";
+    return raw || t("assetlib.toast_verify_failed");
   }
 
   async function handleStartVerify(group: AssetGroupRow) {
@@ -260,9 +265,9 @@ function AssetLibraryPage() {
         return;
       }
       if (res.h5Link) {
-        toast.success("인증 세션 생성 — QR 링크가 발급되었습니다.");
+        toast.success(t("assetlib.toast_verify_created"));
       } else {
-        toast.message("세션은 생성됐지만 QR 링크가 응답에 없습니다. 로그를 확인하세요.");
+        toast.message(t("assetlib.toast_verify_no_link"));
       }
     } catch (e) {
       toast.error(friendlyVerifyError(e instanceof Error ? e.message : ""));
@@ -274,9 +279,9 @@ function AssetLibraryPage() {
       const { verifyStatus } = (await pollVerify.mutateAsync(group.id)) as {
         verifyStatus: string;
       };
-      toast.message(`인증 상태: ${verifyStatus}`);
+      toast.message(t("assetlib.toast_verify_status", { status: verifyStatus }));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "인증 조회 실패");
+      toast.error(e instanceof Error ? e.message : t("assetlib.toast_verify_poll_failed"));
     }
   }
 
@@ -284,18 +289,17 @@ function AssetLibraryPage() {
     <main className="mx-auto w-full max-w-5xl space-y-5 p-4 md:p-6">
       <header className="space-y-1">
         <h1 className="flex items-center gap-2 text-xl font-black">
-          <Boxes className="h-5 w-5" /> 자산고
+          <Boxes className="h-5 w-5" /> {t("assetlib.title")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          BytePlus Seedance 2.0 자산고를 관리합니다. 그룹에 참조 이미지를 입고하면 asset:// 참조로
-          영상 생성에 재사용할 수 있습니다.
+          {t("assetlib.subtitle")}
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
           <a
             href="/video"
             className="rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
           >
-            영상 생성에서 사용하기
+            {t("assetlib.use_in_video")}
           </a>
         </div>
       </header>
@@ -305,10 +309,10 @@ function AssetLibraryPage() {
         {/* ── 그룹 사이드 ─────────────────────────────── */}
         <aside className="space-y-3">
           <div className="rounded-xl border border-border bg-card p-3 space-y-2.5">
-            <Label className="text-xs font-semibold">새 그룹</Label>
+            <Label className="text-xs font-semibold">{t("assetlib.new_group")}</Label>
             <Input
               className="h-9"
-              placeholder="그룹 이름"
+              placeholder={t("assetlib.group_name_ph")}
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
               onKeyDown={(e) => {
@@ -323,8 +327,8 @@ function AssetLibraryPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="aigc">AIGC (일반 참조)</SelectItem>
-                <SelectItem value="digital_human">디지털 휴먼 (실사 인증)</SelectItem>
+                <SelectItem value="aigc">{t("assetlib.kind_aigc")}</SelectItem>
+                <SelectItem value="digital_human">{t("assetlib.kind_digital_human")}</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -338,18 +342,18 @@ function AssetLibraryPage() {
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              그룹 생성
+              {t("assetlib.create_group")}
             </Button>
           </div>
 
           <div className="space-y-1.5">
             {groupsLoading && (
               <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> 불러오는 중…
+                <Loader2 className="h-4 w-4 animate-spin" /> {t("assetlib.loading")}
               </div>
             )}
             {!groupsLoading && groups.length === 0 && (
-              <p className="p-3 text-sm text-muted-foreground">아직 그룹이 없습니다.</p>
+              <p className="p-3 text-sm text-muted-foreground">{t("assetlib.no_groups")}</p>
             )}
             {groups.map((group) => (
               <div
@@ -374,22 +378,24 @@ function AssetLibraryPage() {
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <span>{group.kind === "digital_human" ? "디지털 휴먼" : "AIGC"}</span>
+                    <span>{group.kind === "digital_human"
+                        ? t("assetlib.kind_digital_human_short")
+                        : t("assetlib.kind_aigc_short")}</span>
                     {!group.remote_group_id && (
-                      <span className="text-amber-600">· 원격 미동기화</span>
+                      <span className="text-amber-600">{t("assetlib.remote_unsynced")}</span>
                     )}
                   </div>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-7 shrink-0 gap-1 px-2 text-[11px] text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    aria-label="그룹 삭제"
+                    aria-label={t("assetlib.delete_group")}
                     disabled={deleteGroup.isPending}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (
                         !window.confirm(
-                          `'${group.name}' 그룹과 그 안의 자산을 모두 삭제할까요? 되돌릴 수 없습니다.`,
+                          t("assetlib.delete_group_confirm", { name: group.name }),
                         )
                       )
                         return;
@@ -397,7 +403,7 @@ function AssetLibraryPage() {
                     }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    삭제
+                    {t("assetlib.delete")}
                   </Button>
                 </div>
 
@@ -410,7 +416,7 @@ function AssetLibraryPage() {
         <section className="space-y-4">
           {!selectedGroup ? (
             <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
-              왼쪽에서 그룹을 선택하거나 새 그룹을 만드세요.
+              {t("assetlib.select_group_hint")}
             </div>
           ) : (
             <>
@@ -425,7 +431,7 @@ function AssetLibraryPage() {
                   <p className="text-[11px] text-muted-foreground">
                     {selectedGroup.remote_group_id
                       ? `GroupId: ${selectedGroup.remote_group_id}`
-                      : "원격 GroupId 미발급"}
+                      : t("assetlib.remote_group_id_missing")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -437,7 +443,7 @@ function AssetLibraryPage() {
                         ) : (
                           <Upload className="h-4 w-4" />
                         )}
-                        이미지 입고
+                        {t("assetlib.ingest_image")}
                         <input
                           type="file"
                           accept="image/*"
@@ -455,7 +461,7 @@ function AssetLibraryPage() {
                     size="icon"
                     variant="ghost"
                     className="h-9 w-9"
-                    aria-label="그룹 삭제"
+                    aria-label={t("assetlib.delete_group")}
                     disabled={deleteGroup.isPending}
                     onClick={() => void handleDeleteGroup(selectedGroup.id)}
                   >
@@ -469,11 +475,10 @@ function AssetLibraryPage() {
               {selectedGroup.kind === "digital_human" && (
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2.5">
                   <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                    <ShieldCheck className="h-4 w-4" /> 실사 인물 인증
+                    <ShieldCheck className="h-4 w-4" /> {t("assetlib.verify_title")}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    QR 링크를 배우 휴대폰으로 열어 활체 인증을 완료한 뒤 상태를 조회하세요. 인증 전
-                    404 는 정상입니다.
+                    {t("assetlib.verify_desc")}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
@@ -487,7 +492,7 @@ function AssetLibraryPage() {
                       ) : (
                         <QrCode className="h-4 w-4" />
                       )}
-                      인증 세션 생성
+                      {t("assetlib.verify_start")}
                     </Button>
                     <Button
                       size="sm"
@@ -500,7 +505,7 @@ function AssetLibraryPage() {
                       ) : (
                         <RefreshCw className="h-4 w-4" />
                       )}
-                      인증 상태 조회
+                      {t("assetlib.verify_poll")}
                     </Button>
                     {selectedGroup.verify_h5_link && (
                       <a
@@ -509,7 +514,7 @@ function AssetLibraryPage() {
                         rel="noreferrer"
                         className="text-xs font-medium text-primary underline"
                       >
-                        QR 링크 열기 ↗
+                        {t("assetlib.verify_open_qr")}
                       </a>
                     )}
                   </div>
@@ -519,12 +524,12 @@ function AssetLibraryPage() {
               {/* 자산 그리드 */}
               {assetsLoading ? (
                 <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" /> 자산을 불러오는 중…
+                  <Loader2 className="h-5 w-5 animate-spin" /> {t("assetlib.assets_loading")}
                 </div>
               ) : assets.length === 0 ? (
                 <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border text-sm text-muted-foreground">
                   <ImageIcon className="h-6 w-6" />
-                  아직 입고된 자산이 없습니다.
+                  {t("assetlib.assets_empty")}
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -574,10 +579,10 @@ function AssetLibraryPage() {
                           }
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="캐릭터 연결" />
+                            <SelectValue placeholder={t("assetlib.link_character")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={UNASSIGNED}>연결 안 함</SelectItem>
+                            <SelectItem value={UNASSIGNED}>{t("assetlib.no_link")}</SelectItem>
                             {characters.map((character) => (
                               <SelectItem key={character.id} value={character.id}>
                                 {character.display_name}
@@ -599,11 +604,11 @@ function AssetLibraryPage() {
                                 storagePath: asset.storage_path,
                               },
                             ]);
-                            toast.success("영상 생성 화면에서 참고 미디어로 사용합니다.");
+                            toast.success(t("assetlib.toast_pushed_to_video"));
                             navigate({ to: "/video" });
                           }}
                         >
-                          <Clapperboard className="h-3.5 w-3.5" /> 영상 생성에 사용
+                          <Clapperboard className="h-3.5 w-3.5" /> {t("assetlib.use_for_video")}
                         </Button>
                         <div className="flex gap-1.5">
                           {asset.status !== "ready" && (
@@ -614,14 +619,14 @@ function AssetLibraryPage() {
                               disabled={refreshStatus.isPending}
                               onClick={() => refreshStatus.mutate(asset.id)}
                             >
-                              <RefreshCw className="h-3.5 w-3.5" /> 상태
+                              <RefreshCw className="h-3.5 w-3.5" /> {t("assetlib.refresh_status")}
                             </Button>
                           )}
                           <Button
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8"
-                            aria-label="삭제"
+                            aria-label={t("assetlib.delete")}
                             onClick={() => removeAsset.mutate(asset.id)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
