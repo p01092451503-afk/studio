@@ -366,6 +366,26 @@ function extractField(body: string, keys: string[]): string | null {
   return visit(json);
 }
 
+/** BytePlus 호출 실패 상세(Action/Version/에러코드 등)를 담는 에러. */
+export class BytePlusCallError extends Error {
+  detail: {
+    action: string;
+    version: string;
+    host: string;
+    region: string;
+    status: number;
+    errorCode?: string;
+    errorMessage?: string;
+    requestId?: string;
+    bodySnippet?: string;
+  };
+  constructor(message: string, detail: BytePlusCallError["detail"]) {
+    super(message);
+    this.name = "BytePlusCallError";
+    this.detail = detail;
+  }
+}
+
 /** 원격 자산 그룹을 생성하고 GroupId 를 반환한다. */
 export async function createBytePlusAssetGroup(params: {
   name: string;
@@ -379,9 +399,21 @@ export async function createBytePlusAssetGroup(params: {
     method: "POST",
     body: { Name: params.name, GroupName: params.name, GroupType: groupType },
   });
+  const detail = {
+    action,
+    version: ASSETS_VERSION,
+    host: result.host,
+    region: result.region,
+    status: result.status,
+    errorCode: result.errorCode,
+    errorMessage: result.errorMessage,
+    requestId: result.requestId,
+    bodySnippet: result.body?.slice(0, 300),
+  };
   if (!result.ok) {
-    throw new Error(
+    throw new BytePlusCallError(
       result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+      detail,
     );
   }
   const remoteGroupId = extractField(result.body, [
@@ -391,9 +423,10 @@ export async function createBytePlusAssetGroup(params: {
     "GroupIds",
     "GroupIdSet",
   ]);
-  if (!remoteGroupId) throw new Error("GROUP_ID_NOT_FOUND_IN_RESPONSE");
+  if (!remoteGroupId) throw new BytePlusCallError("GROUP_ID_NOT_FOUND_IN_RESPONSE", detail);
   return { remoteGroupId, raw: result.body };
 }
+
 
 /** 공개 URL 이미지를 그룹에 입고하고 AssetId 를 반환한다. */
 export async function ingestBytePlusAsset(params: {
