@@ -371,26 +371,36 @@ function AssetLibraryPage() {
                     {group.name}
                   </span>
                   {group.kind === "digital_human" && <VerifyBadge status={group.verify_status} />}
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span>{group.kind === "digital_human" ? "디지털 휴먼" : "AIGC"}</span>
+                    {!group.remote_group_id && (
+                      <span className="text-amber-600">· 원격 미동기화</span>
+                    )}
+                  </div>
                   <Button
-                    size="icon"
+                    size="sm"
                     variant="ghost"
-                    className="h-7 w-7 shrink-0"
+                    className="h-7 shrink-0 gap-1 px-2 text-[11px] text-destructive hover:bg-destructive/10 hover:text-destructive"
                     aria-label="그룹 삭제"
                     disabled={deleteGroup.isPending}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (
+                        !window.confirm(
+                          `'${group.name}' 그룹과 그 안의 자산을 모두 삭제할까요? 되돌릴 수 없습니다.`,
+                        )
+                      )
+                        return;
                       void handleDeleteGroup(group.id);
                     }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
+                    삭제
                   </Button>
                 </div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <span>{group.kind === "digital_human" ? "디지털 휴먼" : "AIGC"}</span>
-                  {!group.remote_group_id && (
-                    <span className="text-amber-600">· 원격 미동기화</span>
-                  )}
-                </div>
+
               </div>
             ))}
           </div>
