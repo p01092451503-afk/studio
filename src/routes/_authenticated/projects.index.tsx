@@ -43,7 +43,7 @@ function ProjectsIndex() {
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
           <div className="text-xs font-semibold text-primary">{t("projects.eyebrow")}</div>
-          <h1 className="mt-1 truncate text-3xl font-extrabold tracking-tight">{t("projects.title")}</h1>
+          <h1 className="mt-1 flex items-center gap-2 truncate text-3xl font-extrabold tracking-tight"><FolderKanban className="h-7 w-7 shrink-0" /> {t("projects.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("projects.sub")}</p>
         </div>
         <Link
