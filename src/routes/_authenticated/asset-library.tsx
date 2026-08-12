@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   Boxes,
+  Clapperboard,
   Loader2,
   Plus,
   Trash2,
@@ -15,6 +16,7 @@ import {
   AlertCircle,
   Clock,
 } from "lucide-react";
+import { pushPendingRefs } from "@/lib/pending-refs";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
