@@ -32,6 +32,7 @@ const PAGE_META_KEYS: Record<string, string> = {
   "/video": "header.video",
   "/history": "header.history",
   "/usage": "header.usage",
+  "/asset-library": "header.asset_library",
 };
 
 // Session + tenant bootstrap only needs to happen once per browser session.
