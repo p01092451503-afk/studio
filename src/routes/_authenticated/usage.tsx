@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
+import { BarChart3 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
