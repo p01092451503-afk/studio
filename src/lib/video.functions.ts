@@ -85,6 +85,8 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     const videoId = row.id as string;
 
     const refPublicKeys: string[] = [];
+    // 참고 이미지 공개 URL 진단 결과(실패 원인 추적용).
+    const refProbes: Array<{ url: string; status: number | null; contentType: string | null; contentLength: string | null; ok: boolean; error?: string }> = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
        const { assertPublicFetchUrl, getPublicFetchOrigin } = await import("@/lib/public-origin.server");
