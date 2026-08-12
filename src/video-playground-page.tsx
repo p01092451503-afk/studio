@@ -144,6 +144,7 @@ export function VideoPlaygroundPage() {
   const [assetItemsError, setAssetItemsError] = useState<string | null>(null);
   const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
   const [myLibOpen, setMyLibOpen] = useState(false);
+  const [vaultOpen, setVaultOpen] = useState(false);
   const saveLibraryAsset = useSaveLibraryAsset();
 
 
