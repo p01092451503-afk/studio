@@ -227,12 +227,6 @@ function AssetLibraryPage() {
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
           <a
-            href="/asset-lab"
-            className="rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
-          >
-            자산 진단 콘솔 열기
-          </a>
-          <a
             href="/video"
             className="rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
           >

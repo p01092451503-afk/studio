@@ -108,7 +108,7 @@ export async function publishPublicRef(
     .download(storagePath);
   if (error || !blob) throw new Error(`REF_DOWNLOAD_FAILED: ${storagePath}`);
   const ext = storagePath.split(".").pop() || "png";
-  const key = `${tenantId}/asset-lab/${crypto.randomUUID()}.${ext}`;
+  const key = `${tenantId}/asset-public/${crypto.randomUUID()}.${ext}`;
   const bytes = new Uint8Array(await blob.arrayBuffer());
   const { error: upErr } = await supabaseAdmin.storage
     .from("seedance-refs")

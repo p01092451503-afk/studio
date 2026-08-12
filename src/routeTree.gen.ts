@@ -19,7 +19,6 @@ import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
 import { Route as AuthenticatedCharactersRouteImport } from './routes/_authenticated/characters'
 import { Route as AuthenticatedAssetLibraryRouteImport } from './routes/_authenticated/asset-library'
-import { Route as AuthenticatedAssetLabRouteImport } from './routes/_authenticated/asset-lab'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedEpisodesIdRouteImport } from './routes/_authenticated/episodes.$id'
@@ -75,11 +74,6 @@ const AuthenticatedAssetLibraryRoute =
     path: '/asset-library',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAssetLabRoute = AuthenticatedAssetLabRouteImport.update({
-  id: '/asset-lab',
-  path: '/asset-lab',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedProjectsIndexRoute =
   AuthenticatedProjectsIndexRouteImport.update({
     id: '/projects/',
@@ -106,7 +100,6 @@ const ApiPublicSeedanceRefSplatRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/asset-lab': typeof AuthenticatedAssetLabRoute
   '/asset-library': typeof AuthenticatedAssetLibraryRoute
   '/characters': typeof AuthenticatedCharactersRoute
   '/generate': typeof AuthenticatedGenerateRoute
@@ -122,7 +115,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/asset-lab': typeof AuthenticatedAssetLabRoute
   '/asset-library': typeof AuthenticatedAssetLibraryRoute
   '/characters': typeof AuthenticatedCharactersRoute
   '/generate': typeof AuthenticatedGenerateRoute
@@ -140,7 +132,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/asset-lab': typeof AuthenticatedAssetLabRoute
   '/_authenticated/asset-library': typeof AuthenticatedAssetLibraryRoute
   '/_authenticated/characters': typeof AuthenticatedCharactersRoute
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
@@ -158,7 +149,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/asset-lab'
     | '/asset-library'
     | '/characters'
     | '/generate'
@@ -174,7 +164,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/asset-lab'
     | '/asset-library'
     | '/characters'
     | '/generate'
@@ -191,7 +180,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/_authenticated/asset-lab'
     | '/_authenticated/asset-library'
     | '/_authenticated/characters'
     | '/_authenticated/generate'
@@ -284,13 +272,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssetLibraryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/asset-lab': {
-      id: '/_authenticated/asset-lab'
-      path: '/asset-lab'
-      fullPath: '/asset-lab'
-      preLoaderRoute: typeof AuthenticatedAssetLabRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/projects/': {
       id: '/_authenticated/projects/'
       path: '/projects'
@@ -323,7 +304,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAssetLabRoute: typeof AuthenticatedAssetLabRoute
   AuthenticatedAssetLibraryRoute: typeof AuthenticatedAssetLibraryRoute
   AuthenticatedCharactersRoute: typeof AuthenticatedCharactersRoute
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
@@ -337,7 +317,6 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAssetLabRoute: AuthenticatedAssetLabRoute,
   AuthenticatedAssetLibraryRoute: AuthenticatedAssetLibraryRoute,
   AuthenticatedCharactersRoute: AuthenticatedCharactersRoute,
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
