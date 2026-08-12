@@ -109,9 +109,23 @@ export const deleteAssetGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("asset_groups").delete().eq("id", data.id);
+    // 하위 자산이 있으면 FK 때문에 그룹 삭제가 막히므로 먼저 정리한다.
+    const { error: childErr } = await context.supabase
+      .from("assets")
+      .delete()
+      .eq("group_id", data.id);
+    if (childErr) throw new Error(childErr.message);
+
+    const { data: removed, error } = await context.supabase
+      .from("asset_groups")
+      .delete()
+      .eq("id", data.id)
+      .select("id");
     if (error) throw new Error(error.message);
-    return { ok: true };
+    if (!removed || removed.length === 0) {
+      throw new Error("삭제 권한이 없거나 이미 삭제된 그룹입니다.");
+    }
+    return { ok: true, deleted: removed.length };
   });
 
 // ── 자산 입고 (업로드 → 공개 URL → 원격 입고 → DB) ──────────────
