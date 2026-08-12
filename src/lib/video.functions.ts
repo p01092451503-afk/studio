@@ -115,6 +115,8 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
         try {
           const probe = await fetch(u, { redirect: "manual" });
           const ct = probe.headers.get("content-type") ?? "";
+          const cl = probe.headers.get("content-length") ?? "";
+          refProbes.push({ url: u, status: probe.status, contentType: ct || null, contentLength: cl || null, ok: probe.status === 200 && /^image\//i.test(ct) });
           if (probe.status !== 200 || !/^image\//i.test(ct)) {
             throw new Error(
               `REF_PUBLIC_URL_NOT_IMAGE: status=${probe.status} content-type=${ct || "none"} url=${u}`,
@@ -122,9 +124,11 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
           }
         } catch (probeErr) {
           if (probeErr instanceof Error && probeErr.message.startsWith("REF_PUBLIC_URL_NOT_IMAGE")) throw probeErr;
+          refProbes.push({ url: u, status: null, contentType: null, contentLength: null, ok: false, error: probeErr instanceof Error ? probeErr.message : String(probeErr) });
           throw new Error(`REF_PUBLIC_URL_UNREACHABLE: ${u}`);
         }
       }
+
 
 
       const provider = "seedance";
