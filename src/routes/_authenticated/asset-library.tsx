@@ -151,10 +151,17 @@ function AssetLibraryPage() {
       const row = (await createGroup.mutateAsync({
         name: newGroupName.trim(),
         kind: newGroupKind,
-      })) as { id: string };
+      })) as { id: string; remoteWarning?: string | null };
       setNewGroupName("");
       setSelectedGroupId(row.id);
-      toast.success("그룹이 생성되었습니다.");
+      if (row.remoteWarning) {
+        toast.warning(
+          "그룹은 만들어졌지만 BytePlus 원격 자산고 등록은 실패했습니다. 로컬 그룹으로만 사용됩니다.",
+          { description: row.remoteWarning },
+        );
+      } else {
+        toast.success("그룹이 생성되었습니다.");
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "그룹 생성 실패");
     }
