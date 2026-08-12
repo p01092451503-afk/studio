@@ -102,7 +102,7 @@ export const createAssetGroup = createServerFn({ method: "POST" })
       .select("id, remote_group_id, name, kind, verify_status, created_at")
       .single();
     if (error) throw new Error(error.message);
-    return row;
+    return { ...row, remoteWarning };
   });
 
 export const deleteAssetGroup = createServerFn({ method: "POST" })
