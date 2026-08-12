@@ -496,6 +496,26 @@ function AssetLibraryPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          disabled={!asset.storage_path}
+                          onClick={() => {
+                            if (!asset.storage_path) return;
+                            pushPendingRefs([
+                              {
+                                id: asset.id,
+                                name: asset.name,
+                                kind: asset.asset_type === "video" ? "video" : "image",
+                                storagePath: asset.storage_path,
+                              },
+                            ]);
+                            toast.success("영상 생성 화면에서 참고 미디어로 사용합니다.");
+                            navigate({ to: "/video" });
+                          }}
+                        >
+                          <Clapperboard className="h-3.5 w-3.5" /> 영상 생성에 사용
+                        </Button>
                         <div className="flex gap-1.5">
                           {asset.status !== "ready" && (
                             <Button
