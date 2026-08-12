@@ -51,7 +51,8 @@
     "group_assets": "Assets",
     "group_studio": "Studios",
     "group_records": "Records",
-    "usage": "API Usage"
+    "usage": "API Usage",
+    "asset_library": "Asset vault"
   },
   "header": {
     "projects": {
