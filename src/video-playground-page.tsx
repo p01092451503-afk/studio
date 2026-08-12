@@ -37,6 +37,8 @@ import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
 import { MyLibraryDialog } from "@/components/my-library-dialog";
+import { AssetVaultDialog } from "@/components/asset-vault-dialog";
+import { type AssetRow } from "@/hooks/useAssetLibrary";
 import { useSaveLibraryAsset, type LibraryAssetRow } from "@/hooks/useLibraryAssets";
 
 type MediaKind = "image" | "video" | "audio";
@@ -142,6 +144,7 @@ export function VideoPlaygroundPage() {
   const [assetItemsError, setAssetItemsError] = useState<string | null>(null);
   const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
   const [myLibOpen, setMyLibOpen] = useState(false);
+  const [vaultOpen, setVaultOpen] = useState(false);
   const saveLibraryAsset = useSaveLibraryAsset();
 
 
@@ -329,6 +332,26 @@ export function VideoPlaygroundPage() {
     toast.success(t("mylib.added", { name: asset.name }));
   }
 
+  /** 자산고(asset-library)에 입고된 자산을 참고 미디어로 추가한다. */
+  function addFromVault(asset: AssetRow) {
+    if (assets.length >= 6 || !asset.storage_path) return;
+    const kind: MediaKind = asset.asset_type === "video" ? "video" : "image";
+    const indexInKind = assets.filter((item) => item.kind === kind).length;
+    const added: MediaAsset = {
+      id: crypto.randomUUID(),
+      name: asset.name,
+      kind,
+      tag: `@${kind}${indexInKind + 1}`,
+      roles: autoRolesFor(kind, indexInKind),
+      coverPath: asset.storage_path,
+      framePaths: [asset.storage_path],
+    };
+    setAssets((current) => [...current, added].slice(0, 6));
+    toast.success(t("vault.added", { name: asset.name }));
+  }
+
+
+
   async function generate() {
     if (!prompt.trim()) return toast.error(t("playground.toast_need_prompt"));
 
@@ -380,6 +403,9 @@ export function VideoPlaygroundPage() {
               </div>
               <Button variant="default" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => setMyLibOpen(true)}>
                 <PackageOpen className="h-4 w-4" /> {t("mylib.open_button")}
+              </Button>
+              <Button variant="secondary" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => setVaultOpen(true)}>
+                <PackageOpen className="h-4 w-4" /> {t("vault.open_button")}
               </Button>
               <Button variant="outline" size="sm" className="w-full" disabled={true}>
                 <FolderOpen className="h-4 w-4" /> {t("library.import_button")}
@@ -440,6 +466,7 @@ export function VideoPlaygroundPage() {
       </div>
     </div><VideoOnboardingTour open={tourOpen} onOpenChange={setTourOpen} />
     <MyLibraryDialog open={myLibOpen} onOpenChange={setMyLibOpen} disabled={busy || assets.length >= 6} onPick={(asset) => { addFromMyLibrary(asset); if (assets.length + 1 >= 6) setMyLibOpen(false); }} />
+    <AssetVaultDialog open={vaultOpen} onOpenChange={setVaultOpen} disabled={busy || assets.length >= 6} onPick={(asset) => { addFromVault(asset); if (assets.length + 1 >= 6) setVaultOpen(false); }} />
     <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>

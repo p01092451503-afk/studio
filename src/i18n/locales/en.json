@@ -574,5 +574,23 @@
     "delete": "Delete",
     "saved": "Saved {{count}} file(s) to your library.",
     "added": "Added {{name}} as a reference."
+  },
+  "vault": {
+    "dialog_title": "Pick from asset vault",
+    "hint": "Use assets ingested in the vault as reference media. Ingest status and real-person verification are shown.",
+    "open_button": "Pick from asset vault",
+    "filter_all": "All groups",
+    "ready_only": "Ready only",
+    "loading": "Loading vault assets...",
+    "load_error": "Could not load the asset vault.",
+    "empty": "No matching assets. Ingest assets in the Asset Vault page first.",
+    "use": "Use as reference",
+    "added": "Added {{name}} as reference media.",
+    "status": {
+      "ready": "Ready",
+      "ingesting": "Ingesting",
+      "draft": "Draft",
+      "failed": "Failed"
+    }
   }
 }

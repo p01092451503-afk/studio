@@ -85,6 +85,8 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     const videoId = row.id as string;
 
     const refPublicKeys: string[] = [];
+    // 참고 이미지 공개 URL 진단 결과(실패 원인 추적용).
+    const refProbes: Array<{ url: string; status: number | null; contentType: string | null; contentLength: string | null; ok: boolean; error?: string }> = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
        const { assertPublicFetchUrl, getPublicFetchOrigin } = await import("@/lib/public-origin.server");
@@ -115,6 +117,8 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
         try {
           const probe = await fetch(u, { redirect: "manual" });
           const ct = probe.headers.get("content-type") ?? "";
+          const cl = probe.headers.get("content-length") ?? "";
+          refProbes.push({ url: u, status: probe.status, contentType: ct || null, contentLength: cl || null, ok: probe.status === 200 && /^image\//i.test(ct) });
           if (probe.status !== 200 || !/^image\//i.test(ct)) {
             throw new Error(
               `REF_PUBLIC_URL_NOT_IMAGE: status=${probe.status} content-type=${ct || "none"} url=${u}`,
@@ -122,9 +126,11 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
           }
         } catch (probeErr) {
           if (probeErr instanceof Error && probeErr.message.startsWith("REF_PUBLIC_URL_NOT_IMAGE")) throw probeErr;
+          refProbes.push({ url: u, status: null, contentType: null, contentLength: null, ok: false, error: probeErr instanceof Error ? probeErr.message : String(probeErr) });
           throw new Error(`REF_PUBLIC_URL_UNREACHABLE: ${u}`);
         }
       }
+
 
 
       const provider = "seedance";
@@ -203,16 +209,31 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
         referenceCount: data.imagePaths.length,
       });
 
+      // 참고 이미지 접근 진단을 사람이 읽을 수 있는 형태로 덧붙인다.
+      const probeLines = refProbes.length
+        ? [
+            "",
+            "── 참고 이미지 접근 진단 ──",
+            ...refProbes.map((probe, index) =>
+              `${index + 1}. ${probe.ok ? "정상" : "실패"} · HTTP ${probe.status ?? "응답없음"} · 형식 ${probe.contentType ?? "알수없음"}${probe.contentLength ? ` · ${probe.contentLength}바이트` : ""}${probe.error ? ` · ${probe.error}` : ""}\n   ${probe.url}`,
+            ),
+          ].join("\n")
+        : "";
+      const detailed = `${friendly}${probeLines}`;
+
+      console.error("[video-generation-failed]", { videoId, message, refProbes });
+
       await supabase
         .from("video_generations")
         .update({
           status: "error",
-          error_message: friendly.slice(0, 2000),
+          error_message: detailed.slice(0, 4000),
           completed_at: new Date().toISOString(),
+          options: { ...data.options, refPublicKeys, refProbes, failureRaw: message.slice(0, 1000) },
         })
         .eq("id", videoId);
       // 오류를 throw 하면 클라이언트가 흰 화면으로 죽으므로 결과로 반환한다.
-      return { videoGenerationId: videoId, status: "error" as const, error: friendly, recoveryNotice: null };
+      return { videoGenerationId: videoId, status: "error" as const, error: detailed, recoveryNotice: null };
     }
   });
 
