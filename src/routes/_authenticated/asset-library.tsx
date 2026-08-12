@@ -214,7 +214,7 @@ function AssetLibraryPage() {
         message: string;
       };
       if (!res.ok) {
-        toast.error(res.message || "인증 세션 생성 실패");
+        toast.error(friendlyVerifyError(res.message));
         return;
       }
       if (res.h5Link) {
@@ -223,7 +223,7 @@ function AssetLibraryPage() {
         toast.message("세션은 생성됐지만 QR 링크가 응답에 없습니다. 로그를 확인하세요.");
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "인증 세션 생성 실패");
+      toast.error(friendlyVerifyError(e instanceof Error ? e.message : ""));
     }
   }
 
