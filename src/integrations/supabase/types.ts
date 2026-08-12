@@ -14,6 +14,132 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          group_type: string
+          id: string
+          kind: string
+          name: string
+          remote_group_id: string | null
+          tenant_id: string
+          updated_at: string
+          verify_h5_link: string | null
+          verify_session_id: string | null
+          verify_status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          group_type?: string
+          id?: string
+          kind?: string
+          name: string
+          remote_group_id?: string | null
+          tenant_id: string
+          updated_at?: string
+          verify_h5_link?: string | null
+          verify_session_id?: string | null
+          verify_status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          group_type?: string
+          id?: string
+          kind?: string
+          name?: string
+          remote_group_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+          verify_h5_link?: string | null
+          verify_session_id?: string | null
+          verify_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_groups_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          asset_type: string
+          character_id: string | null
+          created_at: string
+          created_by: string | null
+          group_id: string | null
+          id: string
+          name: string
+          remote_asset_id: string | null
+          source_url: string | null
+          status: string
+          storage_path: string | null
+          tenant_id: string
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          asset_type?: string
+          character_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          group_id?: string | null
+          id?: string
+          name: string
+          remote_asset_id?: string | null
+          source_url?: string | null
+          status?: string
+          storage_path?: string | null
+          tenant_id: string
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asset_type?: string
+          character_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          group_id?: string | null
+          id?: string
+          name?: string
+          remote_asset_id?: string | null
+          source_url?: string | null
+          status?: string
+          storage_path?: string | null
+          tenant_id?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "asset_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_images: {
         Row: {
           character_id: string

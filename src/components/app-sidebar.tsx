@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { History, Film, Wallet, FlaskConical } from "lucide-react";
+import { History, Film, Wallet, FlaskConical, Boxes } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -33,7 +33,10 @@ export function AppSidebar() {
   const groups = [
     {
       label: t("sidebar.group_studio"),
-      items: [{ title: t("sidebar.video"), url: "/video", icon: Film }],
+      items: [
+        { title: t("sidebar.video"), url: "/video", icon: Film },
+        { title: "자산고", url: "/asset-library", icon: Boxes },
+      ],
     },
     {
       label: t("sidebar.group_records"),
