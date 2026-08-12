@@ -419,9 +419,11 @@ export async function createBytePlusAssetGroup(params: {
   const remoteGroupId = extractField(result.body, [
     "GroupId",
     "GroupID",
+    "AssetGroupId",
     "GroupIdList",
     "GroupIds",
     "GroupIdSet",
+    "Id",
   ]);
   if (!remoteGroupId) throw new BytePlusCallError("GROUP_ID_NOT_FOUND_IN_RESPONSE", detail);
   return { remoteGroupId, raw: result.body };
