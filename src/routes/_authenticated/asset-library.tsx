@@ -222,7 +222,22 @@ function AssetLibraryPage() {
           BytePlus Seedance 2.0 자산고를 관리합니다. 그룹에 참조 이미지를 입고하면 asset:// 참조로
           영상 생성에 재사용할 수 있습니다.
         </p>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <a
+            href="/asset-lab"
+            className="rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+          >
+            자산 진단 콘솔 열기
+          </a>
+          <a
+            href="/video"
+            className="rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+          >
+            영상 생성에서 사용하기
+          </a>
+        </div>
       </header>
+
 
       <div className="grid gap-5 md:grid-cols-[280px_1fr]">
         {/* ── 그룹 사이드 ─────────────────────────────── */}
