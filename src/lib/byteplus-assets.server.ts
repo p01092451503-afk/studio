@@ -78,7 +78,10 @@ export async function callSignedBytePlusApi(params: {
   const payloadHash = await sha256Hex(payload);
 
   const now = new Date();
-  const amzDate = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const amzDate = now
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
   const shortDate = amzDate.slice(0, 8);
 
   const signedHeaderNames = ["content-type", "host", "x-content-sha256", "x-date"];
@@ -193,7 +196,10 @@ function parseResult<T>(body: string): { Result?: T } {
 }
 
 /** 그룹(AssetGroup) 목록을 조회한다. */
-export async function listBytePlusAssetGroups(): Promise<{ groups: BytePlusAssetGroup[]; raw: string }> {
+export async function listBytePlusAssetGroups(): Promise<{
+  groups: BytePlusAssetGroup[];
+  raw: string;
+}> {
   const result = await callSignedBytePlusApi({
     action: process.env["BYTEPLUS_ASSETS_LIST_ACTION"] ?? "ListAssetGroups",
     version: process.env["BYTEPLUS_ASSETS_VERSION"] ?? "2024-01-01",
@@ -201,9 +207,13 @@ export async function listBytePlusAssetGroups(): Promise<{ groups: BytePlusAsset
     body: { Filter: { GroupType: "AIGC" }, PageNumber: 1, PageSize: 100 },
   });
   if (!result.ok) {
-    throw new Error(result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`);
+    throw new Error(
+      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+    );
   }
-  const json = parseResult<{ GroupList?: Array<{ GroupId?: string; GroupName?: string; GroupType?: string }> }>(result.body);
+  const json = parseResult<{
+    GroupList?: Array<{ GroupId?: string; GroupName?: string; GroupType?: string }>;
+  }>(result.body);
   const groups = (json.Result?.GroupList ?? [])
     .map((group) => ({
       groupId: group.GroupId ?? "",
@@ -215,7 +225,9 @@ export async function listBytePlusAssetGroups(): Promise<{ groups: BytePlusAsset
 }
 
 /** 특정 그룹에 속한 자산(Asset) 목록을 조회한다. */
-export async function listBytePlusAssets(groupId: string): Promise<{ assets: BytePlusAsset[]; raw: string }> {
+export async function listBytePlusAssets(
+  groupId: string,
+): Promise<{ assets: BytePlusAsset[]; raw: string }> {
   const listAction = process.env["BYTEPLUS_ASSETS_LIST_CHILD_ACTION"] ?? "ListAssets";
   const result = await callSignedBytePlusApi({
     action: listAction,
@@ -224,7 +236,9 @@ export async function listBytePlusAssets(groupId: string): Promise<{ assets: Byt
     body: { Filter: { GroupId: groupId }, PageNumber: 1, PageSize: 100 },
   });
   if (!result.ok) {
-    throw new Error(result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`);
+    throw new Error(
+      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+    );
   }
   const json = parseResult<{
     AssetList?: Array<{
@@ -257,9 +271,18 @@ export async function getBytePlusAssetUrl(assetId: string): Promise<{ url: strin
     body: { AssetId: assetId },
   });
   if (!result.ok) {
-    throw new Error(result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`);
+    throw new Error(
+      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+    );
   }
-  const json = parseResult<{ Url?: string; url?: string; AssetUrl?: string; assetUrl?: string; ThumbnailUrl?: string; thumbnailUrl?: string }>(result.body);
+  const json = parseResult<{
+    Url?: string;
+    url?: string;
+    AssetUrl?: string;
+    assetUrl?: string;
+    ThumbnailUrl?: string;
+    thumbnailUrl?: string;
+  }>(result.body);
   const url =
     json.Result?.Url ??
     json.Result?.url ??
@@ -296,3 +319,194 @@ export async function importBytePlusAssetToStorage(
   return { path, sourceUrl };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 프로덕션 자산고 — 쓰기 경로 (그룹 생성 · 자산 입고 · 실사 인증)
+//
+// 확정 Action 이름은 진단 콘솔(asset-lab)에서 통과한 값을 .env 로 주입한다.
+// 아래 기본값은 가장 유력한 후보이며, 계정 스펙에 맞게 env 로 덮어쓴다.
+//   BYTEPLUS_ASSETS_CREATE_GROUP_ACTION   (기본: CreateAssetGroup)
+//   BYTEPLUS_ASSETS_INGEST_ACTION         (기본: CreateAsset)
+//   BYTEPLUS_ASSETS_REALPERSON_CREATE_ACTION (기본: CreateRealPersonVerifySession)
+//   BYTEPLUS_ASSETS_REALPERSON_GET_ACTION    (기본: GetRealPersonVerifySession)
+// ═══════════════════════════════════════════════════════════════
+
+const ASSETS_VERSION = process.env["BYTEPLUS_ASSETS_VERSION"] ?? "2024-01-01";
+
+/** 응답 body(JSON 문자열)에서 여러 후보 키를 깊이 탐색해 첫 값을 문자열로 뽑는다. */
+function extractField(body: string, keys: string[]): string | null {
+  let json: unknown;
+  try {
+    json = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  const visit = (node: unknown): string | null => {
+    if (node == null || typeof node !== "object") return null;
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        const found = visit(item);
+        if (found) return found;
+      }
+      return null;
+    }
+    const record = node as Record<string, unknown>;
+    for (const key of keys) {
+      if (key in record) {
+        const value = record[key];
+        if (typeof value === "string" && value) return value;
+        if (Array.isArray(value) && value.length > 0) return String(value[0]);
+      }
+    }
+    for (const child of Object.values(record)) {
+      const found = visit(child);
+      if (found) return found;
+    }
+    return null;
+  };
+  return visit(json);
+}
+
+/** 원격 자산 그룹을 생성하고 GroupId 를 반환한다. */
+export async function createBytePlusAssetGroup(params: {
+  name: string;
+  kind?: "aigc" | "digital_human";
+}): Promise<{ remoteGroupId: string; raw: string }> {
+  const action = process.env["BYTEPLUS_ASSETS_CREATE_GROUP_ACTION"] ?? "CreateAssetGroup";
+  const groupType = params.kind === "digital_human" ? "DigitalHuman" : "AIGC";
+  const result = await callSignedBytePlusApi({
+    action,
+    version: ASSETS_VERSION,
+    method: "POST",
+    body: { Name: params.name, GroupName: params.name, GroupType: groupType },
+  });
+  if (!result.ok) {
+    throw new Error(
+      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+    );
+  }
+  const remoteGroupId = extractField(result.body, [
+    "GroupId",
+    "GroupID",
+    "GroupIdList",
+    "GroupIds",
+    "GroupIdSet",
+  ]);
+  if (!remoteGroupId) throw new Error("GROUP_ID_NOT_FOUND_IN_RESPONSE");
+  return { remoteGroupId, raw: result.body };
+}
+
+/** 공개 URL 이미지를 그룹에 입고하고 AssetId 를 반환한다. */
+export async function ingestBytePlusAsset(params: {
+  remoteGroupId: string;
+  imageUrl: string;
+  label: string;
+  assetType?: "image" | "video";
+}): Promise<{ remoteAssetId: string; raw: string }> {
+  const action = process.env["BYTEPLUS_ASSETS_INGEST_ACTION"] ?? "CreateAsset";
+  const result = await callSignedBytePlusApi({
+    action,
+    version: ASSETS_VERSION,
+    method: "POST",
+    body: {
+      GroupId: params.remoteGroupId,
+      ImageUrl: params.imageUrl,
+      Url: params.imageUrl,
+      Label: params.label,
+      Name: params.label,
+      AssetType: params.assetType ?? "image",
+    },
+  });
+  if (!result.ok) {
+    throw new Error(
+      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+    );
+  }
+  const remoteAssetId = extractField(result.body, [
+    "AssetId",
+    "AssetID",
+    "AssetIdList",
+    "AssetIds",
+    "AssetIdSet",
+  ]);
+  if (!remoteAssetId) throw new Error("ASSET_ID_NOT_FOUND_IN_RESPONSE");
+  return { remoteAssetId, raw: result.body };
+}
+
+/** 단일 자산의 입고/처리 상태를 조회한다. (ready 판정용 폴링) */
+export async function getBytePlusAssetStatus(
+  remoteAssetId: string,
+): Promise<{ status: string; thumbnailUrl?: string; raw: string }> {
+  const action = process.env["BYTEPLUS_ASSETS_GET_ACTION"] ?? "GetAssetInfo";
+  const result = await callSignedBytePlusApi({
+    action,
+    version: ASSETS_VERSION,
+    method: "POST",
+    body: { AssetId: remoteAssetId },
+  });
+  if (!result.ok) {
+    throw new Error(
+      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+    );
+  }
+  const rawStatus =
+    extractField(result.body, ["Status", "AssetStatus", "State", "ProcessStatus"]) ?? "";
+  const thumbnailUrl =
+    extractField(result.body, ["ThumbnailUrl", "thumbnailUrl", "CoverUrl", "Url"]) ?? undefined;
+  // 원격 상태 문자열을 로컬 status 로 정규화한다.
+  const normalized = /(?:success|ready|done|finish|active|available)/i.test(rawStatus)
+    ? "ready"
+    : /(?:fail|error|reject)/i.test(rawStatus)
+      ? "failed"
+      : "ingesting";
+  return { status: normalized, thumbnailUrl, raw: result.body };
+}
+
+/** 실사 인물 인증 세션을 생성한다 — QR(H5) 링크를 배우 휴대폰으로 열어 활체 인증. */
+export async function createRealPersonSession(params: {
+  remoteGroupId?: string;
+}): Promise<{ sessionId: string; h5Link: string; raw: string }> {
+  const action =
+    process.env["BYTEPLUS_ASSETS_REALPERSON_CREATE_ACTION"] ?? "CreateRealPersonVerifySession";
+  const result = await callSignedBytePlusApi({
+    action,
+    version: ASSETS_VERSION,
+    method: "POST",
+    body: params.remoteGroupId ? { GroupId: params.remoteGroupId } : {},
+  });
+  if (!result.ok) {
+    throw new Error(
+      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+    );
+  }
+  const sessionId =
+    extractField(result.body, ["SessionId", "SessionID", "VerifySessionId", "TaskId"]) ?? "";
+  const h5Link = extractField(result.body, ["H5Link", "H5Url", "QrUrl", "VerifyUrl", "Url"]) ?? "";
+  if (!sessionId) throw new Error("SESSION_ID_NOT_FOUND_IN_RESPONSE");
+  return { sessionId, h5Link, raw: result.body };
+}
+
+/** 실사 인증 세션 결과를 조회한다 — 인증 완료 시 verified GroupId 를 받는다. */
+export async function getRealPersonSession(
+  sessionId: string,
+): Promise<{ verifyStatus: string; remoteGroupId?: string; raw: string }> {
+  const action =
+    process.env["BYTEPLUS_ASSETS_REALPERSON_GET_ACTION"] ?? "GetRealPersonVerifySession";
+  const result = await callSignedBytePlusApi({
+    action,
+    version: ASSETS_VERSION,
+    method: "POST",
+    body: { SessionId: sessionId, VerifySessionId: sessionId },
+  });
+  // 인증 전에는 404 가 정상 응답일 수 있으므로 throw 하지 않고 pending 으로 취급한다.
+  if (!result.ok) {
+    return { verifyStatus: "pending", raw: result.body };
+  }
+  const rawStatus = extractField(result.body, ["Status", "VerifyStatus", "State", "Result"]) ?? "";
+  const remoteGroupId = extractField(result.body, ["GroupId", "GroupID"]) ?? undefined;
+  const verifyStatus = /(?:success|pass|verified|done)/i.test(rawStatus)
+    ? "verified"
+    : /(?:fail|error|reject)/i.test(rawStatus)
+      ? "failed"
+      : "pending";
+  return { verifyStatus, remoteGroupId, raw: result.body };
+}
