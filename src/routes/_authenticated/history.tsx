@@ -269,17 +269,17 @@ function HistoryPage() {
   }
 
   return (
-    <main className="max-w-6xl px-5 py-8 sm:py-10">
-      <header className="min-w-0 sm:flex sm:items-end sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <div className="text-xs font-semibold text-primary">{t("history.eyebrow")}</div>
-          <h1 className="mt-1 truncate text-3xl font-extrabold tracking-tight">
-            {t("history.title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("history.sub")}</p>
-        </div>
+    <main className="mx-auto w-full max-w-5xl px-6 py-8">
+      <header className="mb-6">
+        <div className="text-xs font-semibold text-primary">{t("history.eyebrow")}</div>
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-foreground">
+          {t("history.title")}
+        </h1>
+        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          {t("history.sub")}
+        </p>
         {tab === "video" && (videoRows?.length ?? 0) > 0 && (
-          <div className="mt-4 flex shrink-0 gap-2 sm:mt-0">
+          <div className="mt-4 flex flex-wrap gap-2">
             {failedCount > 0 && (
               <ConfirmDelete
                 title="Delete failed items?"
