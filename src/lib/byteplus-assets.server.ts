@@ -461,21 +461,78 @@ export async function getBytePlusAssetStatus(
   return { status: normalized, thumbnailUrl, raw: result.body };
 }
 
+/** Action/Version 조합을 순서대로 시도한다. InvalidActionOrVersion 이면 다음 후보로 넘어간다. */
+async function callWithActionFallback(params: {
+  actions: string[];
+  versions: string[];
+  body: unknown;
+}): Promise<{ result: SignedCallResult; tried: string[] }> {
+  const tried: string[] = [];
+  let last: SignedCallResult | null = null;
+  for (const version of params.versions) {
+    for (const action of params.actions) {
+      tried.push(`${action}@${version}`);
+      let result: SignedCallResult;
+      try {
+        result = await callSignedBytePlusApi({ action, version, method: "POST", body: params.body });
+      } catch (e) {
+        last = {
+          ok: false,
+          status: 0,
+          action,
+          host: "-",
+          region: "-",
+          service: "-",
+          body: "",
+          errorCode: "LOCAL_ERROR",
+          errorMessage: e instanceof Error ? e.message : String(e),
+        };
+        continue;
+      }
+      last = result;
+      const unsupported =
+        /InvalidAction|InvalidVersion|UnknownAction|NotSupport|Could not find operation/i.test(
+          `${result.errorCode ?? ""} ${result.errorMessage ?? ""}`,
+        );
+      if (result.ok || !unsupported) return { result, tried };
+    }
+  }
+  return { result: last as SignedCallResult, tried };
+}
+
+const REALPERSON_VERSIONS = [
+  ASSETS_VERSION,
+  ...["2024-01-01", "2023-11-01", "2022-08-31"].filter((v) => v !== ASSETS_VERSION),
+];
+
 /** 실사 인물 인증 세션을 생성한다 — QR(H5) 링크를 배우 휴대폰으로 열어 활체 인증. */
 export async function createRealPersonSession(params: {
   remoteGroupId?: string;
 }): Promise<{ sessionId: string; h5Link: string; raw: string }> {
-  const action =
-    process.env["BYTEPLUS_ASSETS_REALPERSON_CREATE_ACTION"] ?? "CreateRealPersonVerifySession";
-  const result = await callSignedBytePlusApi({
-    action,
-    version: ASSETS_VERSION,
-    method: "POST",
+  const configured = process.env["BYTEPLUS_ASSETS_REALPERSON_CREATE_ACTION"];
+  const actions = configured
+    ? [configured]
+    : [
+        "CreateRealPersonVerifySession",
+        "CreateRealPersonSession",
+        "CreateVerifySession",
+        "CreateRealHumanSession",
+        "CreateDigitalHumanVerifySession",
+      ];
+  const { result, tried } = await callWithActionFallback({
+    actions,
+    versions: REALPERSON_VERSIONS,
     body: params.remoteGroupId ? { GroupId: params.remoteGroupId } : {},
   });
   if (!result.ok) {
+    const detail = result.errorCode
+      ? `${result.errorCode}: ${result.errorMessage}`
+      : `HTTP ${result.status}`;
     throw new Error(
-      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+      `REALPERSON_ACTION_UNSUPPORTED — 이 계정/리전에서 실사 인물 인증 API를 찾지 못했습니다. ` +
+        `시도한 조합: ${tried.join(", ")}. 마지막 응답: ${detail}. ` +
+        `BytePlus 콘솔에서 발급받은 정확한 Action 이름을 BYTEPLUS_ASSETS_REALPERSON_CREATE_ACTION / ` +
+        `BYTEPLUS_ASSETS_VERSION 으로 설정해 주세요.`,
     );
   }
   const sessionId =
@@ -489,12 +546,18 @@ export async function createRealPersonSession(params: {
 export async function getRealPersonSession(
   sessionId: string,
 ): Promise<{ verifyStatus: string; remoteGroupId?: string; raw: string }> {
-  const action =
-    process.env["BYTEPLUS_ASSETS_REALPERSON_GET_ACTION"] ?? "GetRealPersonVerifySession";
-  const result = await callSignedBytePlusApi({
-    action,
-    version: ASSETS_VERSION,
-    method: "POST",
+  const configured = process.env["BYTEPLUS_ASSETS_REALPERSON_GET_ACTION"];
+  const actions = configured
+    ? [configured]
+    : [
+        "GetRealPersonVerifySession",
+        "GetRealPersonSession",
+        "GetVerifySession",
+        "QueryRealPersonVerifySession",
+      ];
+  const { result } = await callWithActionFallback({
+    actions,
+    versions: REALPERSON_VERSIONS,
     body: { SessionId: sessionId, VerifySessionId: sessionId },
   });
   // 인증 전에는 404 가 정상 응답일 수 있으므로 throw 하지 않고 pending 으로 취급한다.
@@ -510,3 +573,4 @@ export async function getRealPersonSession(
       : "pending";
   return { verifyStatus, remoteGroupId, raw: result.body };
 }
+
