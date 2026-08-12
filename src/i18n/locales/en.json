@@ -86,6 +86,10 @@
     "usage": {
       "title": "API Usage",
       "sub": "Estimates vs actual usage"
+    },
+    "asset_library": {
+      "title": "Asset Vault",
+      "sub": "Manage your BytePlus Seedance 2.0 asset vault"
     }
   },
   "auth": {
