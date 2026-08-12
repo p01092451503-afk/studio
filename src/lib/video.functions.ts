@@ -209,16 +209,31 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
         referenceCount: data.imagePaths.length,
       });
 
+      // 참고 이미지 접근 진단을 사람이 읽을 수 있는 형태로 덧붙인다.
+      const probeLines = refProbes.length
+        ? [
+            "",
+            "── 참고 이미지 접근 진단 ──",
+            ...refProbes.map((probe, index) =>
+              `${index + 1}. ${probe.ok ? "정상" : "실패"} · HTTP ${probe.status ?? "응답없음"} · 형식 ${probe.contentType ?? "알수없음"}${probe.contentLength ? ` · ${probe.contentLength}바이트` : ""}${probe.error ? ` · ${probe.error}` : ""}\n   ${probe.url}`,
+            ),
+          ].join("\n")
+        : "";
+      const detailed = `${friendly}${probeLines}`;
+
+      console.error("[video-generation-failed]", { videoId, message, refProbes });
+
       await supabase
         .from("video_generations")
         .update({
           status: "error",
-          error_message: friendly.slice(0, 2000),
+          error_message: detailed.slice(0, 4000),
           completed_at: new Date().toISOString(),
+          options: { ...data.options, refPublicKeys, refProbes, failureRaw: message.slice(0, 1000) },
         })
         .eq("id", videoId);
       // 오류를 throw 하면 클라이언트가 흰 화면으로 죽으므로 결과로 반환한다.
-      return { videoGenerationId: videoId, status: "error" as const, error: friendly, recoveryNotice: null };
+      return { videoGenerationId: videoId, status: "error" as const, error: detailed, recoveryNotice: null };
     }
   });
 
