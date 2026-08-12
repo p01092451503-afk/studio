@@ -51,7 +51,7 @@ function CharactersPage() {
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
           <div className="text-xs font-semibold text-primary">{t("characters.eyebrow")}</div>
-          <h1 className="mt-1 truncate text-3xl font-extrabold tracking-tight">{t("characters.title")}</h1>
+          <h1 className="mt-1 flex items-center gap-2 truncate text-3xl font-extrabold tracking-tight"><Users className="h-7 w-7 shrink-0" /> {t("characters.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("characters.sub")}</p>
         </div>
         <Link
