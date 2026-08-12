@@ -71,14 +71,21 @@ export const createAssetGroup = createServerFn({ method: "POST" })
     if (pErr || !prof?.tenant_id) throw new Error("NO_TENANT_FOR_USER");
     const tenantId = prof.tenant_id;
 
+    // 원격(BytePlus) 그룹 생성은 계정 권한/스펙에 따라 실패할 수 있다.
+    // 실패해도 로컬 그룹은 만들고 경고만 돌려준다 (화면 중단 방지).
     let remoteGroupId: string | null = null;
+    let remoteWarning: string | null = null;
     if (data.kind === "aigc") {
-      const { createBytePlusAssetGroup } = await import("@/lib/byteplus-assets.server");
-      const remote = await createBytePlusAssetGroup({
-        name: data.name,
-        kind: data.kind,
-      });
-      remoteGroupId = remote.remoteGroupId;
+      try {
+        const { createBytePlusAssetGroup } = await import("@/lib/byteplus-assets.server");
+        const remote = await createBytePlusAssetGroup({
+          name: data.name,
+          kind: data.kind,
+        });
+        remoteGroupId = remote.remoteGroupId;
+      } catch (e) {
+        remoteWarning = e instanceof Error ? e.message : String(e);
+      }
     }
 
     const { data: row, error } = await context.supabase
