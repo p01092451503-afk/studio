@@ -310,10 +310,15 @@ function AssetLibraryPage() {
               <p className="p-3 text-sm text-muted-foreground">아직 그룹이 없습니다.</p>
             )}
             {groups.map((group) => (
-              <button
+              <div
                 key={group.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedGroupId(group.id)}
-                className={`w-full rounded-lg border p-2.5 text-left transition-colors ${
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") setSelectedGroupId(group.id);
+                }}
+                className={`w-full cursor-pointer rounded-lg border p-2.5 text-left transition-colors ${
                   selectedGroupId === group.id
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-muted"
@@ -324,6 +329,19 @@ function AssetLibraryPage() {
                     {group.name}
                   </span>
                   {group.kind === "digital_human" && <VerifyBadge status={group.verify_status} />}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    aria-label="그룹 삭제"
+                    disabled={deleteGroup.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDeleteGroup(group.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <span>{group.kind === "digital_human" ? "디지털 휴먼" : "AIGC"}</span>
@@ -331,7 +349,7 @@ function AssetLibraryPage() {
                     <span className="text-amber-600">· 원격 미동기화</span>
                   )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </aside>
