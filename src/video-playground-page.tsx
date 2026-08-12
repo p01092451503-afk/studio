@@ -37,6 +37,8 @@ import { recoverStaleServerFunction } from "@/lib/server-function-recovery";
 import { type SeedanceResolution } from "@/lib/video-constants";
 import { extractVideoFrames } from "@/lib/videoFrames";
 import { MyLibraryDialog } from "@/components/my-library-dialog";
+import { AssetVaultDialog } from "@/components/asset-vault-dialog";
+import { type AssetRow } from "@/hooks/useAssetLibrary";
 import { useSaveLibraryAsset, type LibraryAssetRow } from "@/hooks/useLibraryAssets";
 
 type MediaKind = "image" | "video" | "audio";
