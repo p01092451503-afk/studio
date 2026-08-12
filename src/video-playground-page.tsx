@@ -39,6 +39,7 @@ import { extractVideoFrames } from "@/lib/videoFrames";
 import { MyLibraryDialog } from "@/components/my-library-dialog";
 import { AssetVaultDialog } from "@/components/asset-vault-dialog";
 import { type AssetRow } from "@/hooks/useAssetLibrary";
+import { drainPendingRefs } from "@/lib/pending-refs";
 import { useSaveLibraryAsset, type LibraryAssetRow } from "@/hooks/useLibraryAssets";
 
 type MediaKind = "image" | "video" | "audio";
