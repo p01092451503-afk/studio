@@ -246,9 +246,23 @@ export const startRealPersonVerify = createServerFn({ method: "POST" })
     if (gErr || !group) throw new Error("GROUP_NOT_FOUND");
 
     const { createRealPersonSession } = await import("@/lib/byteplus-assets.server");
-    const { sessionId, h5Link } = await createRealPersonSession({
-      remoteGroupId: group.remote_group_id ?? undefined,
-    });
+    let sessionId = "";
+    let h5Link = "";
+    try {
+      const res = await createRealPersonSession({
+        remoteGroupId: group.remote_group_id ?? undefined,
+      });
+      sessionId = res.sessionId;
+      h5Link = res.h5Link;
+    } catch (e) {
+      // 계정/리전이 실사 인증 API를 지원하지 않는 경우 화면이 죽지 않도록 안내만 반환한다.
+      return {
+        ok: false as const,
+        sessionId: "",
+        h5Link: "",
+        message: e instanceof Error ? e.message : "실사 인증 세션 생성에 실패했습니다.",
+      };
+    }
 
     const { error } = await context.supabase
       .from("asset_groups")
@@ -258,8 +272,10 @@ export const startRealPersonVerify = createServerFn({ method: "POST" })
         verify_status: "pending",
       })
       .eq("id", data.groupId);
-    if (error) throw new Error(error.message);
-    return { sessionId, h5Link };
+    if (error) {
+      return { ok: false as const, sessionId: "", h5Link: "", message: error.message };
+    }
+    return { ok: true as const, sessionId, h5Link, message: "" };
   });
 
 /** 실사 인증 세션 결과를 조회하고, 완료 시 verified GroupId 를 그룹에 반영한다. */
