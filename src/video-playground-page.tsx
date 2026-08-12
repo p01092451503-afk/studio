@@ -332,6 +332,26 @@ export function VideoPlaygroundPage() {
     toast.success(t("mylib.added", { name: asset.name }));
   }
 
+  /** 자산고(asset-library)에 입고된 자산을 참고 미디어로 추가한다. */
+  function addFromVault(asset: AssetRow) {
+    if (assets.length >= 6 || !asset.storage_path) return;
+    const kind: MediaKind = asset.asset_type === "video" ? "video" : "image";
+    const indexInKind = assets.filter((item) => item.kind === kind).length;
+    const added: MediaAsset = {
+      id: crypto.randomUUID(),
+      name: asset.name,
+      kind,
+      tag: `@${kind}${indexInKind + 1}`,
+      roles: autoRolesFor(kind, indexInKind),
+      coverPath: asset.storage_path,
+      framePaths: [asset.storage_path],
+    };
+    setAssets((current) => [...current, added].slice(0, 6));
+    toast.success(t("vault.added", { name: asset.name }));
+  }
+
+
+
   async function generate() {
     if (!prompt.trim()) return toast.error(t("playground.toast_need_prompt"));
 
