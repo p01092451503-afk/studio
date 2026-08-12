@@ -151,17 +151,51 @@ function AssetLibraryPage() {
       const row = (await createGroup.mutateAsync({
         name: newGroupName.trim(),
         kind: newGroupKind,
-      })) as { id: string; remoteWarning?: string | null };
+      })) as {
+        id: string;
+        remoteWarning?: string | null;
+        remoteDetail?: {
+          action?: string;
+          version?: string;
+          host?: string;
+          region?: string;
+          status?: number;
+          errorCode?: string;
+          errorMessage?: string;
+          requestId?: string;
+          bodySnippet?: string;
+        } | null;
+      };
       setNewGroupName("");
       setSelectedGroupId(row.id);
       if (row.remoteWarning) {
+        const d = row.remoteDetail;
+        const lines = [
+          `사유: ${row.remoteWarning}`,
+          d?.action ? `Action: ${d.action}` : null,
+          d?.version ? `Version: ${d.version}` : null,
+          d?.host ? `Host: ${d.host}${d.region ? ` (${d.region})` : ""}` : null,
+          typeof d?.status === "number" ? `HTTP 상태: ${d.status}` : null,
+          d?.errorCode ? `에러 코드: ${d.errorCode}` : null,
+          d?.errorMessage ? `에러 메시지: ${d.errorMessage}` : null,
+          d?.requestId ? `RequestId: ${d.requestId}` : null,
+          d?.bodySnippet ? `응답: ${d.bodySnippet.slice(0, 200)}` : null,
+        ].filter(Boolean) as string[];
         toast.warning(
           "그룹은 만들어졌지만 BytePlus 원격 자산고 등록은 실패했습니다. 로컬 그룹으로만 사용됩니다.",
-          { description: row.remoteWarning },
+          {
+            duration: 15000,
+            description: (
+              <div className="whitespace-pre-wrap break-all text-xs leading-relaxed">
+                {lines.join("\n")}
+              </div>
+            ),
+          },
         );
       } else {
         toast.success("그룹이 생성되었습니다.");
       }
+
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "그룹 생성 실패");
     }

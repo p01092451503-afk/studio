@@ -75,6 +75,17 @@ export const createAssetGroup = createServerFn({ method: "POST" })
     // 실패해도 로컬 그룹은 만들고 경고만 돌려준다 (화면 중단 방지).
     let remoteGroupId: string | null = null;
     let remoteWarning: string | null = null;
+    let remoteDetail: {
+      action?: string;
+      version?: string;
+      host?: string;
+      region?: string;
+      status?: number;
+      errorCode?: string;
+      errorMessage?: string;
+      requestId?: string;
+      bodySnippet?: string;
+    } | null = null;
     if (data.kind === "aigc") {
       try {
         const { createBytePlusAssetGroup } = await import("@/lib/byteplus-assets.server");
@@ -85,8 +96,11 @@ export const createAssetGroup = createServerFn({ method: "POST" })
         remoteGroupId = remote.remoteGroupId;
       } catch (e) {
         remoteWarning = e instanceof Error ? e.message : String(e);
+        const d = (e as { detail?: typeof remoteDetail })?.detail;
+        if (d) remoteDetail = d;
       }
     }
+
 
     const { data: row, error } = await context.supabase
       .from("asset_groups")
@@ -102,7 +116,7 @@ export const createAssetGroup = createServerFn({ method: "POST" })
       .select("id, remote_group_id, name, kind, verify_status, created_at")
       .single();
     if (error) throw new Error(error.message);
-    return { ...row, remoteWarning };
+    return { ...row, remoteWarning, remoteDetail };
   });
 
 export const deleteAssetGroup = createServerFn({ method: "POST" })
