@@ -206,6 +206,14 @@ function AssetLibraryPage() {
     }
   }
 
+  /** 실사 인증 실패 메시지를 짧은 한글 안내로 바꾼다. */
+  function friendlyVerifyError(raw: string) {
+    if (raw.includes("REALPERSON_ACTION_UNSUPPORTED") || raw.includes("InvalidActionOrVersion")) {
+      return "이 BytePlus 계정에는 실사 인물 인증(디지털 휴먼) API 권한이 없습니다. 지금은 'AIGC (일반 참조)' 그룹으로 진행해 주세요.";
+    }
+    return raw || "인증 세션 생성 실패";
+  }
+
   async function handleStartVerify(group: AssetGroupRow) {
     try {
       const res = (await startVerify.mutateAsync(group.id)) as {
