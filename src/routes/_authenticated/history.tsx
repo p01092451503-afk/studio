@@ -271,8 +271,7 @@ function HistoryPage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-8">
       <header className="mb-6">
-        <div className="text-xs font-semibold text-primary">{t("history.eyebrow")}</div>
-        <h1 className="mt-1 flex items-center gap-2 text-3xl font-extrabold tracking-tight text-foreground">
+        <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight text-foreground">
           <Clock className="h-7 w-7 shrink-0" /> {t("history.title")}
         </h1>
         <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
