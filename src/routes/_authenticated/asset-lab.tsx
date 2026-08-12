@@ -324,7 +324,14 @@ function AssetLabPage() {
           Phase 0(스펙 확정) + Phase 1(왕복 1회)을 이 화면에서 그대로 수행합니다. 1→2→3단계를 완료하면 asset:// ID를
           받을 수 있습니다.
         </p>
+        <a
+          href="/asset-library"
+          className="inline-block rounded-md border border-border px-2.5 py-1 text-xs font-semibold hover:bg-muted"
+        >
+          자산고로 이동
+        </a>
       </header>
+
 
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
         <strong>가이드:</strong> 1. 그룹 생성 → 2. 참고 이미지 업로드 → 3. 자산 입고 순서로 진행하세요. 각 단계가
