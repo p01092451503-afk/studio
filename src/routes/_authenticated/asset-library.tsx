@@ -237,7 +237,13 @@ function AssetLibraryPage() {
 
   async function handleDeleteGroup(id: string) {
     try {
-      await deleteGroup.mutateAsync(id);
+      const res = (await deleteGroup.mutateAsync(id)) as
+        | { ok?: boolean; message?: string }
+        | undefined;
+      if (res && res.ok === false) {
+        toast.error(res.message || t("assetlib.toast_group_delete_failed"));
+        return;
+      }
       if (selectedGroupId === id) setSelectedGroupId(null);
       toast.success(t("assetlib.toast_group_deleted"));
     } catch (e) {
