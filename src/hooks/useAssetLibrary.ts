@@ -4,6 +4,7 @@ import {
   listAssetGroups,
   listAssets,
   createAssetGroup,
+  renameAssetGroup,
   deleteAssetGroup,
   ingestAsset,
   refreshAssetStatus,
