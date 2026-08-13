@@ -227,8 +227,11 @@ export function VideoPlaygroundPage() {
       }
 
       if (extractedPaths.length === 0) {
-        throw new Error(`영상에서 참고 프레임을 추출하지 못했습니다: ${asset.name}`);
+        throw new Error(
+          `영상에서 참고 프레임을 추출하지 못했습니다: ${asset.name} (MKV/AVI 등 일부 형식은 브라우저에서 재생이 안 될 수 있어요. MP4로 변환 후 다시 시도해 주세요.)`,
+        );
       }
+
       preparedAssets.push({
         ...asset,
         coverPath: extractedPaths[0] ?? asset.coverPath,
