@@ -258,13 +258,24 @@ function AssetLibraryPage() {
           .replace(/^-|-$/g, "")
           .slice(0, 40) || "asset";
       const path = `${tenantId}/assets/${Date.now()}-${crypto.randomUUID()}-${safeBase}.${ext}`;
-      const assetType = file.type.startsWith("video/") || ext === "mp4" ? "video" : "image";
+      const VIDEO_EXTS = ["mp4", "mov", "webm", "m4v", "avi", "mkv"];
+      const isVideo = file.type.startsWith("video/") || VIDEO_EXTS.includes(ext);
+      const assetType = isVideo ? "video" : "image";
+      const videoMime =
+        ext === "mkv"
+          ? "video/x-matroska"
+          : ext === "mov"
+            ? "video/quicktime"
+            : ext === "webm"
+              ? "video/webm"
+              : "video/mp4";
       const { error } = await supabase.storage
         .from("character-refs")
         .upload(path, file, {
-          contentType: file.type || (ext === "mp4" ? "video/mp4" : "image/png"),
+          contentType: file.type || (isVideo ? videoMime : "image/png"),
           upsert: false,
         });
+
 
       if (error) throw error;
       const result = (await ingest.mutateAsync({
@@ -561,7 +572,7 @@ function AssetLibraryPage() {
                         {t("assetlib.ingest_asset")}
                         <input
                           type="file"
-                          accept="image/*,video/*"
+                          accept="image/*,video/*,.mkv,.mov,.m4v,.avi,.webm"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];

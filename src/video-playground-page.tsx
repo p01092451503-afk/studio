@@ -195,7 +195,7 @@ export function VideoPlaygroundPage() {
 
     for (const asset of assets) {
       const storedVideoPaths = asset.kind === "video"
-        ? asset.framePaths.filter((path) => /\.(?:mp4|mov|webm|m4v)(?:$|\?)/i.test(path))
+        ? asset.framePaths.filter((path) => /\.(?:mp4|mov|webm|m4v|mkv|avi)(?:$|\?)/i.test(path))
         : [];
 
       if (storedVideoPaths.length === 0) {
@@ -227,8 +227,11 @@ export function VideoPlaygroundPage() {
       }
 
       if (extractedPaths.length === 0) {
-        throw new Error(`영상에서 참고 프레임을 추출하지 못했습니다: ${asset.name}`);
+        throw new Error(
+          `영상에서 참고 프레임을 추출하지 못했습니다: ${asset.name} (MKV/AVI 등 일부 형식은 브라우저에서 재생이 안 될 수 있어요. MP4로 변환 후 다시 시도해 주세요.)`,
+        );
       }
+
       preparedAssets.push({
         ...asset,
         coverPath: extractedPaths[0] ?? asset.coverPath,
@@ -324,7 +327,7 @@ export function VideoPlaygroundPage() {
       let audioCount = assets.filter((asset) => asset.kind === "audio").length;
       for (const file of prepared.files) {
         if (assets.length + added.length >= 6) break;
-        if (file.type.startsWith("video/")) {
+        if (file.type.startsWith("video/") || /\.(?:mp4|mov|webm|m4v|mkv|avi)$/i.test(file.name)) {
           const frames = await extractVideoFrames(file, 3);
           const paths: string[] = [];
           for (let i = 0; i < frames.length; i += 1) paths.push(await uploadBlob(frames[i], `frame-${i}.jpg`));
@@ -477,7 +480,7 @@ export function VideoPlaygroundPage() {
           <div className="space-y-6 p-6">
             <div data-video-tour="references" className="space-y-3"><div className="flex items-center justify-between"><Label className="font-bold">{t("playground.references_label")}</Label>{assets.length > 0 && <Button variant="ghost" size="sm" onClick={() => setAssets([])}><Trash2 className="h-4 w-4" /> {t("playground.clear")}</Button>}</div>
               <label onDragEnter={handleReferenceDrag} onDragOver={handleReferenceDrag} onDragLeave={handleReferenceDrag} onDrop={handleReferenceDrop} className={`flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-5 text-center transition-colors ${dragActive ? "border-primary bg-primary-soft" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-primary-soft"}`}>{uploading ? <Loader2 className="h-7 w-7 animate-spin text-primary" /> : <ImagePlus className="h-7 w-7 text-primary" />}<span className="text-sm font-bold">{uploading ? t("playground.uploading") : dragActive ? t("playground.drop_files") : t("playground.add_files")}</span><span className="text-xs text-muted-foreground">{t("playground.files_hint")}</span>
-                <input type="file" accept="image/*,video/*,audio/*" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
+                <input type="file" accept="image/*,video/*,audio/*,.mkv,.avi,.mov,.m4v" multiple className="hidden" disabled={busy} onChange={(event) => { if (event.target.files?.length) void addMedia(event.target.files); event.target.value = ""; }} /></label>
               <div className="flex items-center gap-2">
                 <div className="h-px flex-1 bg-border" />
                 <span className="text-xs text-muted-foreground">{t("library.or")}</span>
