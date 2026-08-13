@@ -77,6 +77,8 @@ export function useIngestingStatusPoller(assets: AssetRow[], intervalMs = 4000) 
   useEffect(() => {
     if (!key) return;
     let cancelled = false;
+    let ticks = 0;
+    const MAX_TICKS = 20; // 약 80초 후 폴링 중단 (무한 재시도 방지)
     const tick = async () => {
       const ids = key.split(",");
       let changed = false;
@@ -91,12 +93,20 @@ export function useIngestingStatusPoller(assets: AssetRow[], intervalMs = 4000) 
       if (!cancelled && changed) qc.invalidateQueries({ queryKey: ["assets"] });
     };
     void tick();
-    const timer = setInterval(() => void tick(), intervalMs);
+    const timer = setInterval(() => {
+      ticks += 1;
+      if (ticks > MAX_TICKS) {
+        clearInterval(timer);
+        return;
+      }
+      void tick();
+    }, intervalMs);
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
   }, [key, intervalMs, qc, refresh]);
+
 }
 
 /** 자산을 영상 생성용 정규 참조(URL + 로컬 storage path)로 해석한다. */
