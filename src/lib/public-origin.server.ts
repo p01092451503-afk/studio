@@ -46,6 +46,31 @@ export function assertPublicFetchUrl(rawUrl: string): void {
   }
 }
 
+/**
+ * 공개 경로가 다른 도메인(커스텀 도메인 등)으로 302 되면 ARK 가 이미지를 못 받는다.
+ * 실제로 200 을 주는 최종 도메인까지 리다이렉트를 따라가서 origin 을 교정한다.
+ */
+export async function resolveRedirectlessOrigin(origin: string): Promise<string> {
+  let current = origin;
+  for (let hop = 0; hop < 3; hop += 1) {
+    try {
+      const res = await fetch(`${current}/api/public/seedance-ref/__probe__.png`, {
+        method: "GET",
+        redirect: "manual",
+      });
+      const location = res.headers.get("location");
+      if (res.status >= 300 && res.status < 400 && location) {
+        current = new URL(location, current).origin;
+        continue;
+      }
+      return current;
+    } catch {
+      return current;
+    }
+  }
+  return current;
+}
+
 export async function getPublicFetchOrigin(): Promise<string> {
   const { getRequestHeader, getRequestUrl } = await import("@tanstack/react-start/server");
   // 배포 프록시 뒤에서는 내부 Host 가 localhost:8080으로 보일 수 있다.
