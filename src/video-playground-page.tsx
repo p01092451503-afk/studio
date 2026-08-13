@@ -146,6 +146,7 @@ export function VideoPlaygroundPage() {
   const [importingAssetId, setImportingAssetId] = useState<string | null>(null);
   const [myLibOpen, setMyLibOpen] = useState(false);
   const [vaultOpen, setVaultOpen] = useState(false);
+  const resolveRef = useResolveAssetReference();
   const saveLibraryAsset = useSaveLibraryAsset();
 
 
@@ -412,22 +413,30 @@ export function VideoPlaygroundPage() {
     toast.success(t("mylib.added", { name: asset.name }));
   }
 
-  /** 자산고(asset-library)에 입고된 자산을 참고 미디어로 추가한다. */
-  function addFromVault(asset: AssetRow) {
-    if (assets.length >= 6 || !asset.storage_path) return;
-    const kind: MediaKind = asset.asset_type === "video" ? "video" : "image";
-    const indexInKind = assets.filter((item) => item.kind === kind).length;
-    const added: MediaAsset = {
-      id: crypto.randomUUID(),
-      name: asset.name,
-      kind,
-      tag: `@${kind}${indexInKind + 1}`,
-      roles: autoRolesFor(kind, indexInKind),
-      coverPath: asset.storage_path,
-      framePaths: [asset.storage_path],
-    };
-    setAssets((current) => [...current, added].slice(0, 6));
-    toast.success(t("vault.added", { name: asset.name }));
+  /** 자산고(asset-library)에 입고된 자산을 정규 참조로 해석해 참고 미디어로 추가한다. */
+  async function addFromVault(asset: AssetRow) {
+    if (assets.length >= 6) return;
+    try {
+      const ref = await resolveRef.mutateAsync(asset.id);
+      console.info("[vault-asset-reference]", { assetId: asset.id, url: ref.url, kind: ref.kind });
+      const kind: MediaKind = ref.kind === "video" ? "video" : "image";
+      const indexInKind = assets.filter((item) => item.kind === kind).length;
+      const added: MediaAsset = {
+        id: crypto.randomUUID(),
+        name: asset.name,
+        kind,
+        tag: `@${kind}${indexInKind + 1}`,
+        roles: autoRolesFor(kind, indexInKind),
+        coverPath: ref.storagePath,
+        framePaths: [ref.storagePath],
+      };
+      setAssets((current) => [...current, added].slice(0, 6));
+      toast.success(t("vault.added", { name: asset.name }));
+    } catch (e) {
+      toast.error(t("vault.pick_failed"), {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
   }
 
 
@@ -486,10 +495,10 @@ export function VideoPlaygroundPage() {
                 <span className="text-xs text-muted-foreground">{t("library.or")}</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
-              <Button variant="default" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => setMyLibOpen(true)}>
+              <Button variant="default" size="sm" className="w-full" disabled={busy || resolveRef.isPending || assets.length >= 6} onClick={() => setMyLibOpen(true)}>
                 <PackageOpen className="h-4 w-4" /> {t("mylib.open_button")}
               </Button>
-              <Button variant="secondary" size="sm" className="w-full" disabled={busy || assets.length >= 6} onClick={() => setVaultOpen(true)}>
+              <Button variant="secondary" size="sm" className="w-full" disabled={busy || resolveRef.isPending || assets.length >= 6} onClick={() => setVaultOpen(true)}>
                 <PackageOpen className="h-4 w-4" /> {t("vault.open_button")}
               </Button>
               <Button variant="outline" size="sm" className="w-full" disabled={true}>
@@ -550,8 +559,8 @@ export function VideoPlaygroundPage() {
         </div></aside>
       </div>
     </div><VideoOnboardingTour open={tourOpen} onOpenChange={setTourOpen} />
-    <MyLibraryDialog open={myLibOpen} onOpenChange={setMyLibOpen} disabled={busy || assets.length >= 6} onPick={(asset) => { addFromMyLibrary(asset); if (assets.length + 1 >= 6) setMyLibOpen(false); }} />
-    <AssetVaultDialog open={vaultOpen} onOpenChange={setVaultOpen} disabled={busy || assets.length >= 6} onPick={(asset) => { addFromVault(asset); if (assets.length + 1 >= 6) setVaultOpen(false); }} />
+    <MyLibraryDialog open={myLibOpen} onOpenChange={setMyLibOpen} disabled={busy || resolveRef.isPending || assets.length >= 6} onPick={(asset) => { addFromMyLibrary(asset); if (assets.length + 1 >= 6) setMyLibOpen(false); }} />
+    <AssetVaultDialog open={vaultOpen} onOpenChange={setVaultOpen} disabled={busy || resolveRef.isPending || assets.length >= 6} onPick={(asset) => { void addFromVault(asset).then(() => { if (assets.length + 1 >= 6) setVaultOpen(false); }); }} />
     <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>

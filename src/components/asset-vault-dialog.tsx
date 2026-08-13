@@ -1,11 +1,17 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ImagePlus, Loader2, Plus, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AssetPreview } from "@/components/AssetPreview";
-import { useAssetGroups, useAssets, type AssetRow, type AssetGroupRow } from "@/hooks/useAssetLibrary";
+import {
+  useAssetGroups,
+  useAssets,
+  useIngestingStatusPoller,
+  type AssetRow,
+  type AssetGroupRow,
+} from "@/hooks/useAssetLibrary";
 
 /**
  * 자산고(asset-library)에 입고된 자산을 영상 생성 참고 미디어로 바로 선택하는 다이얼로그.
@@ -24,7 +30,13 @@ export function AssetVaultDialog({
 }) {
   const { t } = useTranslation();
   const { data: groups = [] } = useAssetGroups();
-  const { data: assets = [], isLoading, error } = useAssets();
+  const { data: assets = [], isLoading, error, refetch } = useAssets();
+  useIngestingStatusPoller(open ? assets : []);
+
+  // 다이얼로그를 열면 1회 자동 새로고침한다.
+  useEffect(() => {
+    if (open) void refetch();
+  }, [open, refetch]);
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [readyOnly, setReadyOnly] = useState(true);
 
@@ -35,7 +47,8 @@ export function AssetVaultDialog({
   }, [groups]);
 
   const visible = useMemo(() => {
-    const usable = assets.filter((asset) => Boolean(asset.storage_path));
+    // 원격 전용 자산(storage_path 없음)도 선택 가능하다 — 선택 시 로컬 사본을 확보한다.
+    const usable = assets.filter((asset) => Boolean(asset.storage_path) || Boolean(asset.remote_asset_id));
     const scoped = groupFilter === "all" ? usable : usable.filter((asset) => asset.group_id === groupFilter);
     const filtered = readyOnly ? scoped.filter((asset) => asset.status === "ready") : scoped;
     return [...filtered].sort((a, b) => Number(b.status === "ready") - Number(a.status === "ready"));
@@ -123,7 +136,7 @@ export function AssetVaultDialog({
                   <Button
                     size="sm"
                     className="w-full"
-                    disabled={disabled || !asset.storage_path}
+                    disabled={disabled}
                     onClick={() => onPick(asset)}
                   >
                     <Plus className="h-4 w-4" /> {t("vault.use")}
