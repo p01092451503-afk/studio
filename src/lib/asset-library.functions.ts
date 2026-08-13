@@ -376,18 +376,56 @@ export const pollRealPersonVerify = createServerFn({ method: "POST" })
     return { verifyStatus };
   });
 
-// ── 영상 생성 참조 (asset:// 픽 → referenceImageUrls) ──────────
+// ── 영상 생성 참조 (정규 참조 URL 해석) ──────────────────────────
 
-/** ready 상태인 자산의 asset:// 참조 문자열을 반환한다 (영상 생성 픽커용). */
-export const getAssetRef = createServerFn({ method: "POST" })
+/**
+ * 자산을 영상 생성에 쓸 수 있는 "정규 참조"로 해석한다.
+ * - BytePlus 처리 URL이 있으면 그 URL을, 없으면 storage_path 를 공개 URL 로 발행한다.
+ * - storage_path 가 없는 원격 전용 자산은 먼저 로컬(character-refs) 사본을 확보한다.
+ * 반환: { url, kind, storagePath }
+ */
+export const resolveAssetReference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: asset, error } = await context.supabase
       .from("assets")
-      .select("remote_asset_id, status")
+      .select("id, tenant_id, remote_asset_id, storage_path, source_url, asset_type, name, status")
       .eq("id", data.id)
       .single();
-    if (error || !asset?.remote_asset_id) throw new Error("ASSET_NOT_FOUND");
-    return { ref: `asset://${asset.remote_asset_id}`, status: asset.status };
+    if (error || !asset) throw new Error("ASSET_NOT_FOUND");
+
+    const kind: "image" | "video" = asset.asset_type === "video" ? "video" : "image";
+    let storagePath = asset.storage_path as string | null;
+
+    // 1) 로컬 사본 확보 (원격 전용 자산 대응)
+    if (!storagePath) {
+      if (!asset.remote_asset_id) throw new Error("ASSET_HAS_NO_SOURCE");
+      const { importBytePlusAssetToStorage } = await import("@/lib/byteplus-assets.server");
+      const { path } = await importBytePlusAssetToStorage(
+        asset.remote_asset_id,
+        asset.tenant_id as string,
+        asset.name as string,
+      );
+      storagePath = path;
+      await context.supabase.from("assets").update({ storage_path: path }).eq("id", asset.id);
+    }
+
+    // 2) 정규 참조 URL 결정
+    let url = "";
+    if (asset.remote_asset_id) {
+      try {
+        const { getBytePlusAssetUrl } = await import("@/lib/byteplus-assets.server");
+        url = (await getBytePlusAssetUrl(asset.remote_asset_id)).url;
+      } catch {
+        url = "";
+      }
+    }
+    if (!url) {
+      const { publishPublicRef } = await import("@/lib/asset-public-ref.server");
+      url = (await publishPublicRef(storagePath, asset.tenant_id as string)).url;
+    }
+
+    return { url, kind, storagePath, status: asset.status as string };
   });
+
