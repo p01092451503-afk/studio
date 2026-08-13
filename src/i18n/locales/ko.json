@@ -643,7 +643,7 @@
     "toast_group_create_failed": "그룹 생성 실패",
     "toast_group_deleted": "그룹을 삭제했습니다.",
     "toast_group_delete_failed": "그룹 삭제 실패",
-    "toast_remote_failed": "그룹은 만들어졌지만 BytePlus 원격 자산고 등록은 실패했습니다. 로컬 그룹으로만 사용됩니다.",
+    "toast_remote_failed": "그룹은 만들어졌지만 BytePlus 원격 자산 라이브러리 등록은 실패했습니다. 로컬 그룹으로만 사용됩니다.",
     "detail_reason": "사유",
     "detail_status": "HTTP 상태",
     "detail_error_code": "에러 코드",
