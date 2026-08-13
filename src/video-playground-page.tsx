@@ -190,6 +190,58 @@ export function VideoPlaygroundPage() {
   const seedanceHealth = health?.models.find((model) => model.provider === "seedance") ?? null;
   const busy = uploading || preparing || gen.running;
 
+  async function prepareReferencePaths() {
+    const preparedAssets: MediaAsset[] = [];
+
+    for (const asset of assets) {
+      const storedVideoPaths = asset.kind === "video"
+        ? asset.framePaths.filter((path) => /\.(?:mp4|mov|webm|m4v)(?:$|\?)/i.test(path))
+        : [];
+
+      if (storedVideoPaths.length === 0) {
+        preparedAssets.push(asset);
+        continue;
+      }
+
+      const extractedPaths: string[] = [];
+      for (const storagePath of storedVideoPaths) {
+        const { data: signed, error: signError } = await supabase.storage
+          .from("character-refs")
+          .createSignedUrl(storagePath, 300);
+        if (signError || !signed?.signedUrl) {
+          throw new Error(`영상 참고 자료를 불러오지 못했습니다: ${asset.name}`);
+        }
+
+        const response = await fetch(signed.signedUrl);
+        if (!response.ok) {
+          throw new Error(`영상 참고 자료 다운로드에 실패했습니다: ${asset.name}`);
+        }
+        const blob = await response.blob();
+        const videoFile = new File([blob], asset.name || "reference.mp4", {
+          type: blob.type || "video/mp4",
+        });
+        const frames = await extractVideoFrames(videoFile, 3);
+        for (let index = 0; index < frames.length; index += 1) {
+          extractedPaths.push(await uploadBlob(frames[index], `vault-frame-${index}.jpg`));
+        }
+      }
+
+      if (extractedPaths.length === 0) {
+        throw new Error(`영상에서 참고 프레임을 추출하지 못했습니다: ${asset.name}`);
+      }
+      preparedAssets.push({
+        ...asset,
+        coverPath: extractedPaths[0] ?? asset.coverPath,
+        framePaths: extractedPaths,
+      });
+    }
+
+    if (preparedAssets.some((asset, index) => asset.framePaths !== assets[index]?.framePaths)) {
+      setAssets(preparedAssets);
+    }
+    return preparedAssets.flatMap((asset) => asset.framePaths).slice(0, 8);
+  }
+
   async function loadAssetGroups() {
     setGroupLoading(true);
     setGroupError(null);
@@ -383,12 +435,17 @@ export function VideoPlaygroundPage() {
     setPreparing(true);
     try {
       const plainPrompt = prompt.trim();
+      // 자산고의 MP4 원본을 image_url/first_frame 으로 보내면 Seedance가
+      // UnsupportedImageFormat으로 거부한다. 브라우저에서 JPG 프레임으로
+      // 변환한 뒤, 기존 참고 이미지 파이프라인에만 전달한다.
+      const preparedStudyPaths = await prepareReferencePaths();
+      const preparedFirstReference = preparedStudyPaths[0] ?? null;
       await gen.run({
-        workLabel: "Playground", provider: "seedance", mode: firstReference ? "i2v" : "t2v",
+        workLabel: "Playground", provider: "seedance", mode: preparedFirstReference ? "i2v" : "t2v",
         finalPrompt: plainPrompt, negativePrompt: undefined,
          rawPrompt: plainPrompt, promptEdited: false, aspectRatio: aspectRatio === "Auto" ? "adaptive" : aspectRatio, resolution,
-         durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: studyPaths,
-        options: { playground: true, referenceStudyPaths: studyPaths, referenceHasVideo: hasVideo,
+         durationSeconds, outputQuantity, generateAudio, cameraFixed: false, seed: null, imagePaths: preparedStudyPaths,
+        options: { playground: true, referenceStudyPaths: preparedStudyPaths, referenceHasVideo: hasVideo,
           references: assets.map((asset) => ({ name: asset.name, kind: asset.kind, tag: asset.tag, roles: asset.roles, directlySuppliedToModel: asset.kind !== "audio" })) },
       });
 
