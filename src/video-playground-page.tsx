@@ -327,7 +327,7 @@ export function VideoPlaygroundPage() {
       let audioCount = assets.filter((asset) => asset.kind === "audio").length;
       for (const file of prepared.files) {
         if (assets.length + added.length >= 6) break;
-        if (file.type.startsWith("video/")) {
+        if (file.type.startsWith("video/") || /\.(?:mp4|mov|webm|m4v|mkv|avi)$/i.test(file.name)) {
           const frames = await extractVideoFrames(file, 3);
           const paths: string[] = [];
           for (let i = 0; i < frames.length; i += 1) paths.push(await uploadBlob(frames[i], `frame-${i}.jpg`));
