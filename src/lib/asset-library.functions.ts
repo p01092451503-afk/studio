@@ -222,10 +222,12 @@ export const ingestAsset = createServerFn({ method: "POST" })
       if (error) return { ok: false as const, message: error.message };
       return { ok: true as const, row };
     } catch (e) {
-      return {
-        ok: false as const,
-        message: e instanceof Error ? e.message : String(e),
-      };
+      const base = e instanceof Error ? e.message : String(e);
+      const d = (e as { detail?: Record<string, unknown> })?.detail;
+      const suffix = d
+        ? ` [Action=${String(d["action"] ?? "?")}, Version=${String(d["version"] ?? "?")}, HTTP=${String(d["status"] ?? "?")}]`
+        : "";
+      return { ok: false as const, message: `${base}${suffix}` };
     }
   });
 
