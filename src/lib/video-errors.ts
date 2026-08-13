@@ -119,7 +119,18 @@ function pick(raw: string): ErrorGuide {
   if (r.includes("signed_url_failed")) return guide("storage", "The reference image could not be loaded.", "Remove the reference, upload it again, and retry.", ["Reference role: confirm a First frame is assigned for image-to-video.", "File: use a supported JPG, PNG, or MP4 that can be previewed in the studio."]);
   if (r.includes("storage_upload_failed") || r.includes("fetch_video_failed")) return guide("storage", "The generated video could not be saved.", "The generation may have completed, but result storage failed. Retry once; if it repeats, contact the workspace administrator.");
   if (r.includes("no_task_id")) return guide("provider", "The provider did not return a task ID.", "Check the request settings, then retry.", ["Mode: use image-to-video only when a valid first frame is attached.", "Prompt: shorten unusually long text.", "Model version: confirm the configured version still exists."]);
-  if (r.includes("ref_public_url_not_image") || r.includes("ref_public_url_unreachable") || r.includes("unsupportedimageformat")) {
+  if (r.includes("unsupportedimageformat")) {
+    return guide(
+      "input",
+      "참고 자료의 실제 파일 형식이 Seedance 이미지 입력 형식과 맞지 않습니다.",
+      "자산고의 영상 원본이 이미지 입력으로 전달된 경우 발생합니다. 앱이 영상을 JPG 참고 프레임으로 변환하도록 수정되었으므로, 같은 자산으로 다시 생성해 주세요.",
+      [
+        "영상 자산: MP4 원본 대신 자동 추출된 JPG 프레임이 Seedance에 전달됩니다.",
+        "이미지 자산: 확장자만 바꾼 파일이 아닌 실제 JPG 또는 PNG를 사용해 주세요.",
+      ],
+    );
+  }
+  if (r.includes("ref_public_url_not_image") || r.includes("ref_public_url_unreachable")) {
     return guide(
       "storage",
       "참고 이미지를 Seedance가 내려받지 못했습니다 (이미지 대신 로그인/오류 페이지가 전달됨).",
