@@ -4,7 +4,7 @@ import { Loader2, Trash2, Video, ImagePlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SignedImage } from "@/components/SignedImage";
+import { AssetPreview } from "@/components/AssetPreview";
 import { useCharacters } from "@/hooks/useCharacters";
 import {
   useAssignLibraryAssetCharacter,
@@ -89,7 +89,7 @@ export function MyLibraryDialog({
               <div className="grid gap-3 sm:grid-cols-3">
                 {items.map((asset) => (
                   <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30">
-                    <SignedImage bucket="character-refs" path={asset.cover_path} alt={asset.name} className="aspect-video w-full object-cover" />
+                    <AssetPreview bucket="character-refs" storagePath={asset.cover_path} assetType={asset.kind} alt={asset.name} className="aspect-video w-full object-cover" />
                     <div className="space-y-2 p-2.5">
                       <div className="flex items-center gap-1.5">
                         {asset.kind === "video" ? <Video className="h-3.5 w-3.5 text-primary" /> : <ImagePlus className="h-3.5 w-3.5 text-primary" />}

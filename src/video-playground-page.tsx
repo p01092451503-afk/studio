@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useVideoGeneration } from "@/hooks/useVideoGeneration";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
-import { SignedImage } from "@/components/SignedImage";
+import { AssetPreview } from "@/components/AssetPreview";
 import { VideoOnboardingTour, shouldStartVideoTour } from "@/components/video-onboarding-tour";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -496,7 +496,7 @@ export function VideoPlaygroundPage() {
                 <p className="text-xs leading-relaxed text-muted-foreground">{t("playground.tag_hint_1")} <span className="font-semibold text-foreground">@image1 · @video1 · @audio1</span> {t("playground.tag_hint_2")}</p>
                 <div className="grid gap-3 sm:grid-cols-2">{assets.map((asset) => <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30">
                   {asset.coverPath
-                    ? <SignedImage bucket="character-refs" path={asset.coverPath} alt={asset.name} className="aspect-video w-full object-cover" />
+                    ? <AssetPreview bucket="character-refs" storagePath={asset.coverPath} assetType={asset.kind} alt={asset.name} className="aspect-video w-full object-cover" />
                     : <div className="flex aspect-video w-full items-center justify-center bg-primary-soft"><Volume2 className="h-8 w-8 text-primary" /></div>}
                   <div className="flex items-center gap-2 px-3 py-2">{asset.kind === "video" ? <Video className="h-3.5 w-3.5 text-primary" /> : asset.kind === "audio" ? <Volume2 className="h-3.5 w-3.5 text-primary" /> : <ImagePlus className="h-3.5 w-3.5 text-primary" />}<span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-bold text-primary">{asset.tag}</span><span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{asset.name}</span><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAssets((current) => current.filter((item) => item.id !== asset.id))} aria-label={t("playground.remove", { name: asset.name })}><X className="h-3.5 w-3.5" /></Button></div>
                   <div className="border-t border-border px-3 py-2">
