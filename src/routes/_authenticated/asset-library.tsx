@@ -9,6 +9,9 @@ import {
   Loader2,
   Plus,
   Trash2,
+  Pencil,
+  Check,
+  X,
   Upload,
   RefreshCw,
   ShieldCheck,
@@ -39,6 +42,7 @@ import {
   useAssetGroups,
   useAssets,
   useCreateAssetGroup,
+  useRenameAssetGroup,
   useDeleteAssetGroup,
   useIngestAsset,
   useRefreshAssetStatus,
@@ -131,6 +135,7 @@ function AssetLibraryPage() {
   const { data: assets = [], isLoading: assetsLoading } = useAssets(selectedGroupId ?? undefined);
 
   const createGroup = useCreateAssetGroup();
+  const renameGroup = useRenameAssetGroup();
   const deleteGroup = useDeleteAssetGroup();
   const ingest = useIngestAsset();
   const refreshStatus = useRefreshAssetStatus();
@@ -142,6 +147,30 @@ function AssetLibraryPage() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupKind, setNewGroupKind] = useState<"aigc" | "digital_human">("aigc");
   const [uploading, setUploading] = useState(false);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+
+  async function handleRenameGroup(id: string) {
+    const name = editingName.trim();
+    if (!name) return;
+    try {
+      const res = (await renameGroup.mutateAsync({ id, name })) as {
+        ok: boolean;
+        message?: string;
+      };
+      if (!res.ok) {
+        toast.error(t("assetlib.toast_group_rename_failed"), { description: res.message });
+        return;
+      }
+      toast.success(t("assetlib.toast_group_renamed"));
+      setEditingGroupId(null);
+    } catch (e) {
+      toast.error(t("assetlib.toast_group_rename_failed"), {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
 
   const busy =
     createGroup.isPending ||
@@ -398,10 +427,53 @@ function AssetLibraryPage() {
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                    {group.name}
-                  </span>
-                  {group.kind === "digital_human" && <VerifyBadge status={group.verify_status} />}
+                  {editingGroupId === group.id ? (
+                    <div
+                      className="flex min-w-0 flex-1 items-center gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      role="presentation"
+                    >
+                      <Input
+                        autoFocus
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") void handleRenameGroup(group.id);
+                          if (e.key === "Escape") setEditingGroupId(null);
+                        }}
+                        className="h-7 text-sm"
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 shrink-0"
+                        aria-label={t("assetlib.rename_save")}
+                        disabled={renameGroup.isPending}
+                        onClick={() => void handleRenameGroup(group.id)}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 shrink-0"
+                        aria-label={t("assetlib.rename_cancel")}
+                        onClick={() => setEditingGroupId(null)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                        {group.name}
+                      </span>
+                      {group.kind === "digital_human" && (
+                        <VerifyBadge status={group.verify_status} />
+                      )}
+                    </>
+                  )}
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -412,6 +484,21 @@ function AssetLibraryPage() {
                       <span className="text-amber-600">{t("assetlib.remote_unsynced")}</span>
                     )}
                   </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 shrink-0 gap-1 px-2 text-[11px]"
+                    aria-label={t("assetlib.rename_group")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingGroupId(group.id);
+                      setEditingName(group.name);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    {t("assetlib.rename")}
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -432,6 +519,7 @@ function AssetLibraryPage() {
                     <Trash2 className="h-3.5 w-3.5" />
                     {t("assetlib.delete")}
                   </Button>
+                  </div>
                 </div>
 
               </div>
