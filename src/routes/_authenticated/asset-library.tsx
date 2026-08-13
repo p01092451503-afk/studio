@@ -217,10 +217,25 @@ function AssetLibraryPage() {
     }
     setUploading(true);
     try {
-      const path = `${tenantId}/assets/${Date.now()}-${crypto.randomUUID()}-${file.name}`;
+      // Storage 키는 ASCII 안전 문자만 허용 → 한글/괄호/공백 등을 정리한다.
+      const dotIndex = file.name.lastIndexOf(".");
+      const rawExt = dotIndex > 0 ? file.name.slice(dotIndex + 1) : "";
+      const ext = (rawExt.replace(/[^a-zA-Z0-9]/g, "") || "bin").toLowerCase();
+      const safeBase =
+        file.name
+          .slice(0, dotIndex > 0 ? dotIndex : undefined)
+          .replace(/[^a-zA-Z0-9._-]/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "")
+          .slice(0, 40) || "asset";
+      const path = `${tenantId}/assets/${Date.now()}-${crypto.randomUUID()}-${safeBase}.${ext}`;
       const { error } = await supabase.storage
         .from("character-refs")
-        .upload(path, file, { contentType: file.type || "image/png", upsert: false });
+        .upload(path, file, {
+          contentType: file.type || (ext === "mp4" ? "video/mp4" : "image/png"),
+          upsert: false,
+        });
+
       if (error) throw error;
       await ingest.mutateAsync({
         groupId: selectedGroup.id,
