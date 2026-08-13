@@ -49,6 +49,7 @@ import {
   useAssignAssetCharacter,
   useDeleteAsset,
   useStartRealPersonVerify,
+  useIngestingStatusPoller,
   usePollRealPersonVerify,
   type AssetGroupRow,
 } from "@/hooks/useAssetLibrary";
@@ -133,6 +134,7 @@ function AssetLibraryPage() {
   );
 
   const { data: assets = [], isLoading: assetsLoading } = useAssets(selectedGroupId ?? undefined);
+  useIngestingStatusPoller(assets);
 
   const createGroup = useCreateAssetGroup();
   const renameGroup = useRenameAssetGroup();
@@ -147,6 +149,9 @@ function AssetLibraryPage() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupKind, setNewGroupKind] = useState<"aigc" | "digital_human">("aigc");
   const [uploading, setUploading] = useState(false);
+  const [consentHolder, setConsentHolder] = useState("");
+  const [consentAt, setConsentAt] = useState("");
+  const [consentNote, setConsentNote] = useState("");
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
 
@@ -321,8 +326,17 @@ function AssetLibraryPage() {
   }
 
   async function handleStartVerify(group: AssetGroupRow) {
+    if (!consentHolder.trim() || !consentAt) {
+      toast.error(t("assetlib.consent_required"));
+      return;
+    }
     try {
-      const res = (await startVerify.mutateAsync(group.id)) as {
+      const res = (await startVerify.mutateAsync({
+        groupId: group.id,
+        consentHolder: consentHolder.trim(),
+        consentAt: new Date(consentAt).toISOString(),
+        consentNote: consentNote.trim() || undefined,
+      })) as {
         ok: boolean;
         h5Link: string;
         message: string;
@@ -606,11 +620,39 @@ function AssetLibraryPage() {
                   <p className="text-xs text-muted-foreground">
                     {t("assetlib.verify_desc")}
                   </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      value={consentHolder}
+                      onChange={(e) => setConsentHolder(e.target.value)}
+                      placeholder={t("assetlib.consent_holder_ph")}
+                    />
+                    <Input
+                      type="datetime-local"
+                      value={consentAt}
+                      onChange={(e) => setConsentAt(e.target.value)}
+                    />
+                    <Input
+                      className="sm:col-span-2"
+                      value={consentNote}
+                      onChange={(e) => setConsentNote(e.target.value)}
+                      placeholder={t("assetlib.consent_note_ph")}
+                    />
+                  </div>
+                  {selectedGroup.consent_holder && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("assetlib.consent_saved", {
+                        holder: selectedGroup.consent_holder,
+                        at: selectedGroup.consent_at
+                          ? new Date(selectedGroup.consent_at).toLocaleString()
+                          : "-",
+                      })}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={busy}
+                      disabled={busy || !consentHolder.trim() || !consentAt}
                       onClick={() => void handleStartVerify(selectedGroup)}
                     >
                       {startVerify.isPending ? (
