@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { SignedImage } from "@/components/SignedImage";
+import { AssetPreview } from "@/components/AssetPreview";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useCharacters } from "@/hooks/useCharacters";
