@@ -119,6 +119,24 @@ export const createAssetGroup = createServerFn({ method: "POST" })
     return { ...row, remoteWarning, remoteDetail };
   });
 
+/** 자산 그룹 이름을 변경한다. */
+export const renameAssetGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ id: z.string().uuid(), name: z.string().min(1).max(120) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("asset_groups")
+      .update({ name: data.name.trim() })
+      .eq("id", data.id)
+      .select("id, name");
+    if (error) return { ok: false as const, message: error.message };
+    if (!rows || rows.length === 0)
+      return { ok: false as const, message: "수정 권한이 없거나 없는 그룹입니다." };
+    return { ok: true as const, name: rows[0]!.name };
+  });
+
 export const deleteAssetGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
