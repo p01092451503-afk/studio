@@ -305,7 +305,16 @@ export const deleteAsset = createServerFn({ method: "POST" })
 /** 실사 인증 세션을 생성하고 QR(H5) 링크를 그룹에 저장한다. */
 export const startRealPersonVerify = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ groupId: z.string().uuid() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        groupId: z.string().uuid(),
+        consentHolder: z.string().min(1).max(120),
+        consentAt: z.string().min(1),
+        consentNote: z.string().max(1000).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { data: group, error: gErr } = await context.supabase
       .from("asset_groups")
@@ -313,6 +322,20 @@ export const startRealPersonVerify = createServerFn({ method: "POST" })
       .eq("id", data.groupId)
       .single();
     if (gErr || !group) throw new Error("GROUP_NOT_FOUND");
+
+    // 동의 기록을 먼저 저장한다 (인증 시작 전 필수).
+    const { error: cErr } = await context.supabase
+      .from("asset_groups")
+      .update({
+        consent_holder: data.consentHolder.trim(),
+        consent_at: new Date(data.consentAt).toISOString(),
+        consent_note: data.consentNote?.trim() || null,
+      })
+      .eq("id", data.groupId);
+    if (cErr) {
+      return { ok: false as const, sessionId: "", h5Link: "", message: cErr.message };
+    }
+
 
     const { createRealPersonSession } = await import("@/lib/byteplus-assets.server");
     let sessionId = "";
