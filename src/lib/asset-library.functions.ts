@@ -257,7 +257,7 @@ export const refreshAssetStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: asset, error: aErr } = await context.supabase
       .from("assets")
-      .select("remote_asset_id")
+      .select("remote_asset_id, storage_path")
       .eq("id", data.id)
       .single();
     if (aErr || !asset?.remote_asset_id) throw new Error("ASSET_NOT_FOUND");
@@ -265,8 +265,19 @@ export const refreshAssetStatus = createServerFn({ method: "POST" })
     const { getBytePlusAssetStatus } = await import("@/lib/byteplus-assets.server");
     const { status, thumbnailUrl, raw } = await getBytePlusAssetStatus(asset.remote_asset_id);
 
-    // 원격 조회 Action 을 찾지 못한 경우 DB 상태는 유지한다.
-    if (status === "unknown") return { status, note: raw };
+    // 원격 조회 Action 을 찾지 못한 경우:
+    // 로컬 사본(storage_path)이 있으면 영상 생성에 바로 쓸 수 있으므로 ready 로 확정하고,
+    // 없으면 기존 상태를 유지한다(무한 ingesting 방지).
+    if (status === "unknown") {
+      if (!asset.storage_path) return { status, note: raw };
+      const { error: upErr } = await context.supabase
+        .from("assets")
+        .update({ status: "ready" })
+        .eq("id", data.id);
+      if (upErr) throw new Error(upErr.message);
+      return { status: "ready" as const, note: raw };
+    }
+
 
     const { error } = await context.supabase
       .from("assets")
