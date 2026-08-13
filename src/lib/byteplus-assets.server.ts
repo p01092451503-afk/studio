@@ -354,6 +354,7 @@ function extractField(body: string, keys: string[]): string | null {
       if (key in record) {
         const value = record[key];
         if (typeof value === "string" && value) return value;
+        if (typeof value === "number" && Number.isFinite(value)) return String(value);
         if (Array.isArray(value) && value.length > 0) return String(value[0]);
       }
     }
