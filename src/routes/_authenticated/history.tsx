@@ -275,7 +275,7 @@ function HistoryPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-8">
+    <main className="mx-auto w-full max-w-7xl px-6 py-8">
       <header className="mb-6">
         <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight text-foreground">
           <Clock className="h-7 w-7 shrink-0" /> {t("history.title")}
@@ -362,7 +362,7 @@ function HistoryPage() {
           className="mt-6"
           items={list as VideoRow[]}
           getKey={(r) => r.id}
-          columnsForWidth={(w) => (w < 640 ? 1 : w < 1024 ? 2 : 3)}
+          columnsForWidth={(w) => (w < 640 ? 1 : w < 768 ? 2 : w < 1024 ? 3 : 4)}
           estimateRowHeight={(cw) => cw * (9 / 16) + 96}
           renderItem={(r) => {
             const first = r.results[0];
