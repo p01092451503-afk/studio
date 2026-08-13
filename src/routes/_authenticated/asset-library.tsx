@@ -176,7 +176,6 @@ function AssetLibraryPage() {
     }
   }
 
-
   const busy =
     createGroup.isPending ||
     ingest.isPending ||
@@ -220,21 +219,17 @@ function AssetLibraryPage() {
           d?.requestId ? `RequestId: ${d.requestId}` : null,
           d?.bodySnippet ? `${t("assetlib.detail_body")}: ${d.bodySnippet.slice(0, 200)}` : null,
         ].filter(Boolean) as string[];
-        toast.warning(
-          t("assetlib.toast_remote_failed"),
-          {
-            duration: 15000,
-            description: (
-              <div className="whitespace-pre-wrap break-all text-xs leading-relaxed">
-                {lines.join("\n")}
-              </div>
-            ),
-          },
-        );
+        toast.warning(t("assetlib.toast_remote_failed"), {
+          duration: 15000,
+          description: (
+            <div className="whitespace-pre-wrap break-all text-xs leading-relaxed">
+              {lines.join("\n")}
+            </div>
+          ),
+        });
       } else {
         toast.success(t("assetlib.toast_group_created"));
       }
-
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("assetlib.toast_group_create_failed"));
     }
@@ -274,13 +269,10 @@ function AssetLibraryPage() {
             : ext === "webm"
               ? "video/webm"
               : "video/mp4";
-      const { error } = await supabase.storage
-        .from("character-refs")
-        .upload(path, file, {
-          contentType: file.type || (isVideo ? videoMime : "image/png"),
-          upsert: false,
-        });
-
+      const { error } = await supabase.storage.from("character-refs").upload(path, file, {
+        contentType: file.type || (isVideo ? videoMime : "image/png"),
+        upsert: false,
+      });
 
       if (error) throw error;
       const result = (await ingest.mutateAsync({
@@ -372,9 +364,7 @@ function AssetLibraryPage() {
         <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight">
           <Boxes className="h-7 w-7" /> {t("assetlib.title")}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          {t("assetlib.subtitle")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("assetlib.subtitle")}</p>
         <div className="flex flex-wrap gap-2 pt-1">
           <a
             href="/video"
@@ -384,7 +374,6 @@ function AssetLibraryPage() {
           </a>
         </div>
       </header>
-
 
       <div className="grid gap-5 md:grid-cols-[280px_1fr]">
         {/* ── 그룹 사이드 ─────────────────────────────── */}
@@ -502,51 +491,50 @@ function AssetLibraryPage() {
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <span>{group.kind === "digital_human"
+                    <span>
+                      {group.kind === "digital_human"
                         ? t("assetlib.kind_digital_human_short")
-                        : t("assetlib.kind_aigc_short")}</span>
+                        : t("assetlib.kind_aigc_short")}
+                    </span>
                     {!group.remote_group_id && (
                       <span className="text-amber-600">{t("assetlib.remote_unsynced")}</span>
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 shrink-0 gap-1 px-2 text-[11px]"
-                    aria-label={t("assetlib.rename_group")}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingGroupId(group.id);
-                      setEditingName(group.name);
-                    }}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    {t("assetlib.rename")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 shrink-0 gap-1 px-2 text-[11px] text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    aria-label={t("assetlib.delete_group")}
-                    disabled={deleteGroup.isPending}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (
-                        !window.confirm(
-                          t("assetlib.delete_group_confirm", { name: group.name }),
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 shrink-0 gap-1 px-2 text-[11px]"
+                      aria-label={t("assetlib.rename_group")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingGroupId(group.id);
+                        setEditingName(group.name);
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      {t("assetlib.rename")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 shrink-0 gap-1 px-2 text-[11px] text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      aria-label={t("assetlib.delete_group")}
+                      disabled={deleteGroup.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          !window.confirm(t("assetlib.delete_group_confirm", { name: group.name }))
                         )
-                      )
-                        return;
-                      void handleDeleteGroup(group.id);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    {t("assetlib.delete")}
-                  </Button>
+                          return;
+                        void handleDeleteGroup(group.id);
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {t("assetlib.delete")}
+                    </Button>
                   </div>
                 </div>
-
               </div>
             ))}
           </div>
@@ -605,7 +593,6 @@ function AssetLibraryPage() {
                     disabled={deleteGroup.isPending}
                     onClick={() => void handleDeleteGroup(selectedGroup.id)}
                   >
-
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -617,9 +604,7 @@ function AssetLibraryPage() {
                   <div className="flex items-center gap-2 text-sm font-semibold text-primary">
                     <ShieldCheck className="h-4 w-4" /> {t("assetlib.verify_title")}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("assetlib.verify_desc")}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t("assetlib.verify_desc")}</p>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Input
                       value={consentHolder}

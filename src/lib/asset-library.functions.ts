@@ -101,7 +101,6 @@ export const createAssetGroup = createServerFn({ method: "POST" })
       }
     }
 
-
     const { data: row, error } = await context.supabase
       .from("asset_groups")
       .insert({
@@ -200,7 +199,8 @@ export const ingestAsset = createServerFn({ method: "POST" })
         .select("tenant_id")
         .eq("id", context.userId)
         .single();
-      if (pErr || !prof?.tenant_id) return { ok: false as const, message: "사용자 테넌트를 확인할 수 없습니다." };
+      if (pErr || !prof?.tenant_id)
+        return { ok: false as const, message: "사용자 테넌트를 확인할 수 없습니다." };
       const tenantId = prof.tenant_id;
 
       const { data: group, error: gErr } = await context.supabase
@@ -209,7 +209,8 @@ export const ingestAsset = createServerFn({ method: "POST" })
         .eq("id", data.groupId)
         .single();
       if (gErr || !group) return { ok: false as const, message: "자산 그룹을 찾을 수 없습니다." };
-      if (!group.remote_group_id) return { ok: false as const, message: "원격 서비스와 동기화되지 않은 그룹입니다." };
+      if (!group.remote_group_id)
+        return { ok: false as const, message: "원격 서비스와 동기화되지 않은 그룹입니다." };
 
       const { publishPublicRef } = await import("@/lib/asset-public-ref.server");
       const { ingestBytePlusAsset } = await import("@/lib/byteplus-assets.server");
@@ -336,7 +337,6 @@ export const startRealPersonVerify = createServerFn({ method: "POST" })
       return { ok: false as const, sessionId: "", h5Link: "", message: cErr.message };
     }
 
-
     const { createRealPersonSession } = await import("@/lib/byteplus-assets.server");
     let sessionId = "";
     let h5Link = "";
@@ -451,4 +451,3 @@ export const resolveAssetReference = createServerFn({ method: "POST" })
 
     return { url, kind, storagePath, status: asset.status as string };
   });
-

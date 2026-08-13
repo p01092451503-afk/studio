@@ -3,7 +3,13 @@ import { useTranslation } from "react-i18next";
 import { ImagePlus, Loader2, Plus, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AssetPreview } from "@/components/AssetPreview";
 import {
   useAssetGroups,
@@ -48,10 +54,15 @@ export function AssetVaultDialog({
 
   const visible = useMemo(() => {
     // 원격 전용 자산(storage_path 없음)도 선택 가능하다 — 선택 시 로컬 사본을 확보한다.
-    const usable = assets.filter((asset) => Boolean(asset.storage_path) || Boolean(asset.remote_asset_id));
-    const scoped = groupFilter === "all" ? usable : usable.filter((asset) => asset.group_id === groupFilter);
+    const usable = assets.filter(
+      (asset) => Boolean(asset.storage_path) || Boolean(asset.remote_asset_id),
+    );
+    const scoped =
+      groupFilter === "all" ? usable : usable.filter((asset) => asset.group_id === groupFilter);
     const filtered = readyOnly ? scoped.filter((asset) => asset.status === "ready") : scoped;
-    return [...filtered].sort((a, b) => Number(b.status === "ready") - Number(a.status === "ready"));
+    return [...filtered].sort(
+      (a, b) => Number(b.status === "ready") - Number(a.status === "ready"),
+    );
   }, [assets, groupFilter, readyOnly]);
 
   return (
@@ -76,7 +87,11 @@ export function AssetVaultDialog({
               ))}
             </SelectContent>
           </Select>
-          <Button variant={readyOnly ? "default" : "outline"} size="sm" onClick={() => setReadyOnly((value) => !value)}>
+          <Button
+            variant={readyOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setReadyOnly((value) => !value)}
+          >
             <ShieldCheck className="h-4 w-4" /> {t("vault.ready_only")}
           </Button>
         </div>
@@ -96,7 +111,10 @@ export function AssetVaultDialog({
             const group = asset.group_id ? groupById.get(asset.group_id) : undefined;
             const verified = group?.verify_status === "verified";
             return (
-              <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30">
+              <div
+                key={asset.id}
+                className="overflow-hidden rounded-lg border border-border bg-muted/30"
+              >
                 {asset.storage_path ? (
                   <AssetPreview
                     bucket="character-refs"
