@@ -20,7 +20,7 @@ export const listAssetGroups = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("asset_groups")
       .select(
-        "id, remote_group_id, name, group_type, kind, verify_status, verify_h5_link, created_at",
+        "id, remote_group_id, name, group_type, kind, verify_status, verify_h5_link, consent_holder, consent_at, consent_note, created_at",
       )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
