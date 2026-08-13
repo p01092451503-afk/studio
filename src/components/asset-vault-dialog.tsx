@@ -4,7 +4,7 @@ import { ImagePlus, Loader2, Plus, ShieldCheck, ShieldAlert } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SignedImage } from "@/components/SignedImage";
+import { AssetPreview } from "@/components/AssetPreview";
 import { useAssetGroups, useAssets, type AssetRow, type AssetGroupRow } from "@/hooks/useAssetLibrary";
 
 /**
@@ -85,9 +85,10 @@ export function AssetVaultDialog({
             return (
               <div key={asset.id} className="overflow-hidden rounded-lg border border-border bg-muted/30">
                 {asset.storage_path ? (
-                  <SignedImage
+                  <AssetPreview
                     bucket="character-refs"
-                    path={asset.storage_path}
+                    storagePath={asset.storage_path}
+                    assetType={asset.asset_type}
                     alt={asset.name}
                     className="aspect-video w-full object-cover"
                   />
