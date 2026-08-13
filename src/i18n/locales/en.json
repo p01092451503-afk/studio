@@ -596,7 +596,8 @@
       "ingesting": "Ingesting",
       "draft": "Draft",
       "failed": "Failed"
-    }
+    },
+    "pick_failed": "Could not add this asset as a reference."
   },
   "assetlib": {
     "title": "Asset Vault",
@@ -664,6 +665,10 @@
     "rename_save": "Save",
     "rename_cancel": "Cancel",
     "toast_group_renamed": "Group renamed.",
-    "toast_group_rename_failed": "Failed to rename group"
+    "toast_group_rename_failed": "Failed to rename group",
+    "consent_required": "Enter the consent holder and consent time before verification.",
+    "consent_holder_ph": "Consent holder name (required)",
+    "consent_note_ph": "Consent note (optional) — scope, channel, etc.",
+    "consent_saved": "Consent on file: {{holder}} · {{at}}"
   }
 }

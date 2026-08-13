@@ -596,7 +596,8 @@
       "ingesting": "입고 중",
       "draft": "임시",
       "failed": "입고 실패"
-    }
+    },
+    "pick_failed": "자산을 참고 미디어로 가져오지 못했습니다."
   },
   "assetlib": {
     "title": "자산고",
@@ -664,6 +665,10 @@
     "rename_save": "저장",
     "rename_cancel": "취소",
     "toast_group_renamed": "그룹 이름을 변경했습니다.",
-    "toast_group_rename_failed": "그룹 이름 변경 실패"
+    "toast_group_rename_failed": "그룹 이름 변경 실패",
+    "consent_required": "실사 인증 전에 동의자와 동의 일시를 입력해 주세요.",
+    "consent_holder_ph": "동의자 이름 (필수)",
+    "consent_note_ph": "동의 메모 (선택) — 동의 범위·경로 등",
+    "consent_saved": "저장된 동의: {{holder}} · {{at}}"
   }
 }

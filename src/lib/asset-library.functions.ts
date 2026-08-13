@@ -20,7 +20,7 @@ export const listAssetGroups = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("asset_groups")
       .select(
-        "id, remote_group_id, name, group_type, kind, verify_status, verify_h5_link, created_at",
+        "id, remote_group_id, name, group_type, kind, verify_status, verify_h5_link, consent_holder, consent_at, consent_note, created_at",
       )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -100,7 +100,6 @@ export const createAssetGroup = createServerFn({ method: "POST" })
         if (d) remoteDetail = d;
       }
     }
-
 
     const { data: row, error } = await context.supabase
       .from("asset_groups")
@@ -200,7 +199,8 @@ export const ingestAsset = createServerFn({ method: "POST" })
         .select("tenant_id")
         .eq("id", context.userId)
         .single();
-      if (pErr || !prof?.tenant_id) return { ok: false as const, message: "사용자 테넌트를 확인할 수 없습니다." };
+      if (pErr || !prof?.tenant_id)
+        return { ok: false as const, message: "사용자 테넌트를 확인할 수 없습니다." };
       const tenantId = prof.tenant_id;
 
       const { data: group, error: gErr } = await context.supabase
@@ -209,7 +209,8 @@ export const ingestAsset = createServerFn({ method: "POST" })
         .eq("id", data.groupId)
         .single();
       if (gErr || !group) return { ok: false as const, message: "자산 그룹을 찾을 수 없습니다." };
-      if (!group.remote_group_id) return { ok: false as const, message: "원격 서비스와 동기화되지 않은 그룹입니다." };
+      if (!group.remote_group_id)
+        return { ok: false as const, message: "원격 서비스와 동기화되지 않은 그룹입니다." };
 
       const { publishPublicRef } = await import("@/lib/asset-public-ref.server");
       const { ingestBytePlusAsset } = await import("@/lib/byteplus-assets.server");
@@ -305,7 +306,16 @@ export const deleteAsset = createServerFn({ method: "POST" })
 /** 실사 인증 세션을 생성하고 QR(H5) 링크를 그룹에 저장한다. */
 export const startRealPersonVerify = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ groupId: z.string().uuid() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        groupId: z.string().uuid(),
+        consentHolder: z.string().min(1).max(120),
+        consentAt: z.string().min(1),
+        consentNote: z.string().max(1000).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { data: group, error: gErr } = await context.supabase
       .from("asset_groups")
@@ -313,6 +323,19 @@ export const startRealPersonVerify = createServerFn({ method: "POST" })
       .eq("id", data.groupId)
       .single();
     if (gErr || !group) throw new Error("GROUP_NOT_FOUND");
+
+    // 동의 기록을 먼저 저장한다 (인증 시작 전 필수).
+    const { error: cErr } = await context.supabase
+      .from("asset_groups")
+      .update({
+        consent_holder: data.consentHolder.trim(),
+        consent_at: new Date(data.consentAt).toISOString(),
+        consent_note: data.consentNote?.trim() || null,
+      })
+      .eq("id", data.groupId);
+    if (cErr) {
+      return { ok: false as const, sessionId: "", h5Link: "", message: cErr.message };
+    }
 
     const { createRealPersonSession } = await import("@/lib/byteplus-assets.server");
     let sessionId = "";
@@ -376,18 +399,55 @@ export const pollRealPersonVerify = createServerFn({ method: "POST" })
     return { verifyStatus };
   });
 
-// ── 영상 생성 참조 (asset:// 픽 → referenceImageUrls) ──────────
+// ── 영상 생성 참조 (정규 참조 URL 해석) ──────────────────────────
 
-/** ready 상태인 자산의 asset:// 참조 문자열을 반환한다 (영상 생성 픽커용). */
-export const getAssetRef = createServerFn({ method: "POST" })
+/**
+ * 자산을 영상 생성에 쓸 수 있는 "정규 참조"로 해석한다.
+ * - BytePlus 처리 URL이 있으면 그 URL을, 없으면 storage_path 를 공개 URL 로 발행한다.
+ * - storage_path 가 없는 원격 전용 자산은 먼저 로컬(character-refs) 사본을 확보한다.
+ * 반환: { url, kind, storagePath }
+ */
+export const resolveAssetReference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: asset, error } = await context.supabase
       .from("assets")
-      .select("remote_asset_id, status")
+      .select("id, tenant_id, remote_asset_id, storage_path, source_url, asset_type, name, status")
       .eq("id", data.id)
       .single();
-    if (error || !asset?.remote_asset_id) throw new Error("ASSET_NOT_FOUND");
-    return { ref: `asset://${asset.remote_asset_id}`, status: asset.status };
+    if (error || !asset) throw new Error("ASSET_NOT_FOUND");
+
+    const kind: "image" | "video" = asset.asset_type === "video" ? "video" : "image";
+    let storagePath = asset.storage_path as string | null;
+
+    // 1) 로컬 사본 확보 (원격 전용 자산 대응)
+    if (!storagePath) {
+      if (!asset.remote_asset_id) throw new Error("ASSET_HAS_NO_SOURCE");
+      const { importBytePlusAssetToStorage } = await import("@/lib/byteplus-assets.server");
+      const { path } = await importBytePlusAssetToStorage(
+        asset.remote_asset_id,
+        asset.tenant_id as string,
+        asset.name as string,
+      );
+      storagePath = path;
+      await context.supabase.from("assets").update({ storage_path: path }).eq("id", asset.id);
+    }
+
+    // 2) 정규 참조 URL 결정
+    let url = "";
+    if (asset.remote_asset_id) {
+      try {
+        const { getBytePlusAssetUrl } = await import("@/lib/byteplus-assets.server");
+        url = (await getBytePlusAssetUrl(asset.remote_asset_id)).url;
+      } catch {
+        url = "";
+      }
+    }
+    if (!url) {
+      const { publishPublicRef } = await import("@/lib/asset-public-ref.server");
+      url = (await publishPublicRef(storagePath, asset.tenant_id as string)).url;
+    }
+
+    return { url, kind, storagePath, status: asset.status as string };
   });
