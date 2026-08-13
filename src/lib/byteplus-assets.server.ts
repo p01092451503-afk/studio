@@ -453,9 +453,21 @@ export async function ingestBytePlusAsset(params: {
       ProjectName: process.env["BYTEPLUS_ASSETS_PROJECT_NAME"] ?? "default",
     },
   });
+  const detail = {
+    action,
+    version: ASSETS_VERSION,
+    host: result.host,
+    region: result.region,
+    status: result.status,
+    errorCode: result.errorCode,
+    errorMessage: result.errorMessage,
+    requestId: result.requestId,
+    bodySnippet: result.body?.slice(0, 300),
+  };
   if (!result.ok) {
-    throw new Error(
+    throw new BytePlusCallError(
       result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
+      detail,
     );
   }
   const remoteAssetId = extractField(result.body, [
@@ -464,8 +476,20 @@ export async function ingestBytePlusAsset(params: {
     "AssetIdList",
     "AssetIds",
     "AssetIdSet",
+    "Id",
+    "ID",
+    "ResourceId",
+    "MaterialId",
+    "TaskId",
+    "VideoId",
+    "ImageId",
   ]);
-  if (!remoteAssetId) throw new Error("ASSET_ID_NOT_FOUND_IN_RESPONSE");
+  if (!remoteAssetId) {
+    throw new BytePlusCallError(
+      `ASSET_ID_NOT_FOUND_IN_RESPONSE (응답 본문: ${detail.bodySnippet ?? "없음"})`,
+      detail,
+    );
+  }
   return { remoteAssetId, raw: result.body };
 }
 
