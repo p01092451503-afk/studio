@@ -249,6 +249,12 @@ function HistoryPage() {
   const selectedVideo = tab === "video" ? (videoRows?.find((r) => r.id === id) ?? null) : null;
   const locale = i18n.language.startsWith("ko") ? "ko-KR" : "en-US";
 
+  // 상세 보기를 열면 카드가 목록 위에 삽입되므로 맨 위로 스크롤해 바로 보이게 한다.
+  useEffect(() => {
+    if (id) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [id]);
+
+
   const list: Row[] | VideoRow[] | null = tab === "video" ? videoRows : rows;
   const failedCount = (videoRows ?? []).filter((r) => r.status === "error").length;
 
