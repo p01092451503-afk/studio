@@ -100,8 +100,8 @@ export async function publishPublicRef(
   tenantId: string,
 ): Promise<{ url: string; key: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { getPublicFetchOrigin } = await import("@/lib/public-origin.server");
-  const origin = await getPublicFetchOrigin();
+  const { getPublicFetchOrigin, resolveRedirectlessOrigin } = await import("@/lib/public-origin.server");
+  const origin = await resolveRedirectlessOrigin(await getPublicFetchOrigin());
 
   const { data: blob, error } = await supabaseAdmin.storage
     .from("character-refs")
