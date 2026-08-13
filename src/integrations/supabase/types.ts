@@ -16,6 +16,9 @@ export type Database = {
     Tables: {
       asset_groups: {
         Row: {
+          consent_at: string | null
+          consent_holder: string | null
+          consent_note: string | null
           created_at: string
           created_by: string | null
           group_type: string
@@ -30,6 +33,9 @@ export type Database = {
           verify_status: string
         }
         Insert: {
+          consent_at?: string | null
+          consent_holder?: string | null
+          consent_note?: string | null
           created_at?: string
           created_by?: string | null
           group_type?: string
@@ -44,6 +50,9 @@ export type Database = {
           verify_status?: string
         }
         Update: {
+          consent_at?: string | null
+          consent_holder?: string | null
+          consent_note?: string | null
           created_at?: string
           created_by?: string | null
           group_type?: string
