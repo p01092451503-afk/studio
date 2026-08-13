@@ -58,6 +58,12 @@ export function VirtualGrid<T>({
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
+        // 컨테이너 위쪽에 상세 카드 등이 열리면 위치가 바뀌므로 매번 다시 측정한다.
+        const el = containerRef.current;
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          setContainerTop(rect.top + window.scrollY);
+        }
         setScrollY(window.scrollY);
       });
     };
@@ -65,12 +71,21 @@ export function VirtualGrid<T>({
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
     onScroll();
+
+    // 문서 높이/레이아웃 변화(상세 카드 열기 등)도 감지해 위치를 갱신한다.
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => onScroll());
+      ro.observe(document.body);
+    }
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
+      ro?.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
   }, [measure]);
+
 
   const columns = Math.max(1, width ? columnsForWidth(width) : 1);
   const columnWidth = width ? (width - gap * (columns - 1)) / columns : 0;
