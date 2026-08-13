@@ -263,7 +263,10 @@ export const refreshAssetStatus = createServerFn({ method: "POST" })
     if (aErr || !asset?.remote_asset_id) throw new Error("ASSET_NOT_FOUND");
 
     const { getBytePlusAssetStatus } = await import("@/lib/byteplus-assets.server");
-    const { status, thumbnailUrl } = await getBytePlusAssetStatus(asset.remote_asset_id);
+    const { status, thumbnailUrl, raw } = await getBytePlusAssetStatus(asset.remote_asset_id);
+
+    // 원격 조회 Action 을 찾지 못한 경우 DB 상태는 유지한다.
+    if (status === "unknown") return { status, note: raw };
 
     const { error } = await context.supabase
       .from("assets")

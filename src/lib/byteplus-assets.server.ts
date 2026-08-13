@@ -498,17 +498,24 @@ export async function ingestBytePlusAsset(params: {
 export async function getBytePlusAssetStatus(
   remoteAssetId: string,
 ): Promise<{ status: string; thumbnailUrl?: string; raw: string }> {
-  const action = process.env["BYTEPLUS_ASSETS_GET_ACTION"] ?? "GetAssetInfo";
-  const result = await callSignedBytePlusApi({
-    action,
-    version: ASSETS_VERSION,
-    method: "POST",
+  const configured = process.env["BYTEPLUS_ASSETS_GET_ACTION"];
+  const actions = configured
+    ? [configured]
+    : ["GetAssetInfo", "GetAsset", "DescribeAsset", "QueryAsset", "GetAssetDetail", "ListAssets"];
+  const { result, tried } = await callWithActionFallback({
+    actions,
+    versions: REALPERSON_VERSIONS,
     body: { AssetId: remoteAssetId },
   });
-  if (!result.ok) {
-    throw new Error(
-      result.errorCode ? `${result.errorCode}: ${result.errorMessage}` : `HTTP ${result.status}`,
-    );
+  if (!result?.ok) {
+    const detail = result?.errorCode
+      ? `${result.errorCode}: ${result.errorMessage}`
+      : `HTTP ${result?.status ?? 0}`;
+    // 조회 Action 을 못 찾아도 앱이 죽지 않도록 '알 수 없음' 상태로 되돌린다.
+    return {
+      status: "unknown",
+      raw: `ASSET_STATUS_ACTION_UNSUPPORTED — 시도한 조합: ${tried.join(", ")}. 마지막 응답: ${detail}`,
+    };
   }
   const rawStatus =
     extractField(result.body, ["Status", "AssetStatus", "State", "ProcessStatus"]) ?? "";
@@ -522,6 +529,7 @@ export async function getBytePlusAssetStatus(
       : "ingesting";
   return { status: normalized, thumbnailUrl, raw: result.body };
 }
+
 
 /** Action/Version 조합을 순서대로 시도한다. InvalidActionOrVersion 이면 다음 후보로 넘어간다. */
 async function callWithActionFallback(params: {
