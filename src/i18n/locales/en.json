@@ -619,7 +619,7 @@
     "delete_group_confirm": "Delete the group '{{name}}' and all of its assets? This cannot be undone.",
     "select_group_hint": "Select a group on the left or create a new one.",
     "remote_group_id_missing": "No remote GroupId issued",
-    "ingest_image": "Ingest image",
+    "ingest_asset": "Ingest asset",
     "verify_title": "Real-person verification",
     "verify_desc": "Open the QR link on the actor's phone, complete liveness verification, then check the status. A 404 before verification is expected.",
     "verify_start": "Create verification session",
