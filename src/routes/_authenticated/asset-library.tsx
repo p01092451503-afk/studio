@@ -237,11 +237,15 @@ function AssetLibraryPage() {
         });
 
       if (error) throw error;
-      await ingest.mutateAsync({
+      const result = (await ingest.mutateAsync({
         groupId: selectedGroup.id,
         storagePath: path,
         name: file.name.replace(/\.[^.]+$/, ""),
-      });
+      })) as { ok: boolean; message?: string };
+      if (!result.ok) {
+        toast.error(result.message || t("assetlib.toast_ingest_failed"));
+        return;
+      }
       toast.success(t("assetlib.toast_ingest_done"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("assetlib.toast_ingest_failed"));

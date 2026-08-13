@@ -175,56 +175,57 @@ export const ingestAsset = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: prof, error: pErr } = await context.supabase
-      .from("profiles")
-      .select("tenant_id")
-      .eq("id", context.userId)
-      .single();
-    if (pErr || !prof?.tenant_id) throw new Error("NO_TENANT_FOR_USER");
-    const tenantId = prof.tenant_id;
+    try {
+      const { data: prof, error: pErr } = await context.supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("id", context.userId)
+        .single();
+      if (pErr || !prof?.tenant_id) return { ok: false as const, message: "사용자 테넌트를 확인할 수 없습니다." };
+      const tenantId = prof.tenant_id;
 
-    // 그룹의 원격 ID 확인
-    const { data: group, error: gErr } = await context.supabase
-      .from("asset_groups")
-      .select("remote_group_id")
-      .eq("id", data.groupId)
-      .single();
-    if (gErr || !group) throw new Error("GROUP_NOT_FOUND");
-    if (!group.remote_group_id) throw new Error("GROUP_NOT_SYNCED_REMOTE");
+      const { data: group, error: gErr } = await context.supabase
+        .from("asset_groups")
+        .select("remote_group_id")
+        .eq("id", data.groupId)
+        .single();
+      if (gErr || !group) return { ok: false as const, message: "자산 그룹을 찾을 수 없습니다." };
+      if (!group.remote_group_id) return { ok: false as const, message: "원격 서비스와 동기화되지 않은 그룹입니다." };
 
-    const { publishPublicRef } = await import("@/lib/asset-public-ref.server");
-    const { ingestBytePlusAsset } = await import("@/lib/byteplus-assets.server");
+      const { publishPublicRef } = await import("@/lib/asset-public-ref.server");
+      const { ingestBytePlusAsset } = await import("@/lib/byteplus-assets.server");
+      const { url: publicUrl } = await publishPublicRef(data.storagePath, tenantId);
+      const { remoteAssetId } = await ingestBytePlusAsset({
+        remoteGroupId: group.remote_group_id,
+        imageUrl: publicUrl,
+        label: data.name,
+        assetType: "image",
+      });
 
-    // 1) 공개 URL 발급
-    const { url: publicUrl } = await publishPublicRef(data.storagePath, tenantId);
-
-    // 2) 원격 입고
-    const { remoteAssetId } = await ingestBytePlusAsset({
-      remoteGroupId: group.remote_group_id,
-      imageUrl: publicUrl,
-      label: data.name,
-      assetType: "image",
-    });
-
-    // 3) DB 미러
-    const { data: row, error } = await context.supabase
-      .from("assets")
-      .insert({
-        tenant_id: tenantId,
-        group_id: data.groupId,
-        character_id: data.characterId ?? null,
-        remote_asset_id: remoteAssetId,
-        name: data.name,
-        asset_type: "image",
-        status: "ingesting",
-        source_url: publicUrl,
-        storage_path: data.storagePath,
-        created_by: context.userId,
-      })
-      .select("id, remote_asset_id, name, status, created_at")
-      .single();
-    if (error) throw new Error(error.message);
-    return row;
+      const { data: row, error } = await context.supabase
+        .from("assets")
+        .insert({
+          tenant_id: tenantId,
+          group_id: data.groupId,
+          character_id: data.characterId ?? null,
+          remote_asset_id: remoteAssetId,
+          name: data.name,
+          asset_type: "image",
+          status: "ingesting",
+          source_url: publicUrl,
+          storage_path: data.storagePath,
+          created_by: context.userId,
+        })
+        .select("id, remote_asset_id, name, status, created_at")
+        .single();
+      if (error) return { ok: false as const, message: error.message };
+      return { ok: true as const, row };
+    } catch (e) {
+      return {
+        ok: false as const,
+        message: e instanceof Error ? e.message : String(e),
+      };
+    }
   });
 
 /** 입고 중인 자산의 원격 상태를 폴링하고 DB status 를 갱신한다. */
