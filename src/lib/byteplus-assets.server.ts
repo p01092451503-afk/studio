@@ -446,6 +446,12 @@ export async function ingestBytePlusAsset(params: {
       GroupId: params.remoteGroupId,
       ImageUrl: params.imageUrl,
       Url: params.imageUrl,
+      // BytePlus 는 대문자 URL 키를 요구한다 (MissingParameter.URL 방지)
+      URL: params.imageUrl,
+      ImageURL: params.imageUrl,
+      ...(params.assetType === "video" ? { VideoURL: params.imageUrl } : {}),
+
+
       Label: params.label,
       Name: params.label,
       AssetType: params.assetType ?? "image",
