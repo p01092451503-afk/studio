@@ -658,6 +658,12 @@
     "toast_verify_no_link": "세션은 생성됐지만 QR 링크가 응답에 없습니다. 로그를 확인하세요.",
     "toast_verify_status": "인증 상태: {{status}}",
     "toast_verify_poll_failed": "인증 조회 실패",
-    "toast_pushed_to_video": "영상 생성 화면에서 참고 미디어로 사용합니다."
+    "toast_pushed_to_video": "영상 생성 화면에서 참고 미디어로 사용합니다.",
+    "rename": "이름 변경",
+    "rename_group": "그룹 이름 변경",
+    "rename_save": "저장",
+    "rename_cancel": "취소",
+    "toast_group_renamed": "그룹 이름을 변경했습니다.",
+    "toast_group_rename_failed": "그룹 이름 변경 실패"
   }
 }

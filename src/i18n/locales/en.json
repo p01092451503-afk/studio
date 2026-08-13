@@ -658,6 +658,12 @@
     "toast_verify_no_link": "The session was created but the response contained no QR link. Check the logs.",
     "toast_verify_status": "Verification status: {{status}}",
     "toast_verify_poll_failed": "Failed to fetch verification status",
-    "toast_pushed_to_video": "Added as reference media on the video generation screen."
+    "toast_pushed_to_video": "Added as reference media on the video generation screen.",
+    "rename": "Rename",
+    "rename_group": "Rename group",
+    "rename_save": "Save",
+    "rename_cancel": "Cancel",
+    "toast_group_renamed": "Group renamed.",
+    "toast_group_rename_failed": "Failed to rename group"
   }
 }

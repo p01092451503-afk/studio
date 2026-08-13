@@ -4,6 +4,7 @@ import {
   listAssetGroups,
   listAssets,
   createAssetGroup,
+  renameAssetGroup,
   deleteAssetGroup,
   ingestAsset,
   refreshAssetStatus,
@@ -58,6 +59,15 @@ export function useCreateAssetGroup() {
   const fn = useServerFn(createAssetGroup);
   return useMutation({
     mutationFn: (input: { name: string; kind: "aigc" | "digital_human" }) => fn({ data: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["asset-groups"] }),
+  });
+}
+
+export function useRenameAssetGroup() {
+  const qc = useQueryClient();
+  const fn = useServerFn(renameAssetGroup);
+  return useMutation({
+    mutationFn: (input: { id: string; name: string }) => fn({ data: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["asset-groups"] }),
   });
 }
