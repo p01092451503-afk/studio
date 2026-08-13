@@ -63,6 +63,15 @@ export function useCreateAssetGroup() {
   });
 }
 
+export function useRenameAssetGroup() {
+  const qc = useQueryClient();
+  const fn = useServerFn(renameAssetGroup);
+  return useMutation({
+    mutationFn: (input: { id: string; name: string }) => fn({ data: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["asset-groups"] }),
+  });
+}
+
 export function useDeleteAssetGroup() {
   const qc = useQueryClient();
   const fn = useServerFn(deleteAssetGroup);
