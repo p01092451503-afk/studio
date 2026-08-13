@@ -170,6 +170,7 @@ export const ingestAsset = createServerFn({ method: "POST" })
         groupId: z.string().uuid(),
         storagePath: z.string().min(1),
         name: z.string().min(1).max(120),
+        assetType: z.enum(["image", "video"]).default("image"),
         characterId: z.string().uuid().nullable().optional(),
       })
       .parse(d),
@@ -199,7 +200,7 @@ export const ingestAsset = createServerFn({ method: "POST" })
         remoteGroupId: group.remote_group_id,
         imageUrl: publicUrl,
         label: data.name,
-        assetType: "image",
+        assetType: data.assetType,
       });
 
       const { data: row, error } = await context.supabase
@@ -210,7 +211,7 @@ export const ingestAsset = createServerFn({ method: "POST" })
           character_id: data.characterId ?? null,
           remote_asset_id: remoteAssetId,
           name: data.name,
-          asset_type: "image",
+          asset_type: data.assetType,
           status: "ingesting",
           source_url: publicUrl,
           storage_path: data.storagePath,

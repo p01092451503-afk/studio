@@ -229,6 +229,7 @@ function AssetLibraryPage() {
           .replace(/^-|-$/g, "")
           .slice(0, 40) || "asset";
       const path = `${tenantId}/assets/${Date.now()}-${crypto.randomUUID()}-${safeBase}.${ext}`;
+      const assetType = file.type.startsWith("video/") || ext === "mp4" ? "video" : "image";
       const { error } = await supabase.storage
         .from("character-refs")
         .upload(path, file, {
@@ -241,6 +242,7 @@ function AssetLibraryPage() {
         groupId: selectedGroup.id,
         storagePath: path,
         name: file.name.replace(/\.[^.]+$/, ""),
+        assetType,
       })) as { ok: boolean; message?: string };
       if (!result.ok) {
         toast.error(result.message || t("assetlib.toast_ingest_failed"));
@@ -471,7 +473,7 @@ function AssetLibraryPage() {
                         {t("assetlib.ingest_image")}
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,video/mp4"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
