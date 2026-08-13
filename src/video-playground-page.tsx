@@ -195,7 +195,7 @@ export function VideoPlaygroundPage() {
 
     for (const asset of assets) {
       const storedVideoPaths = asset.kind === "video"
-        ? asset.framePaths.filter((path) => /\.(?:mp4|mov|webm|m4v)(?:$|\?)/i.test(path))
+        ? asset.framePaths.filter((path) => /\.(?:mp4|mov|webm|m4v|mkv|avi)(?:$|\?)/i.test(path))
         : [];
 
       if (storedVideoPaths.length === 0) {
