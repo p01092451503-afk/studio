@@ -438,23 +438,19 @@ export async function ingestBytePlusAsset(params: {
   assetType?: "image" | "video";
 }): Promise<{ remoteAssetId: string; raw: string }> {
   const action = process.env["BYTEPLUS_ASSETS_INGEST_ACTION"] ?? "CreateAsset";
+  // CreateAsset enum values are case-sensitive: "Image" / "Video".
+  // Lowercase values ("image" / "video") are rejected as InvalidParameter.AssetType.
+  const remoteAssetType = params.assetType === "video" ? "Video" : "Image";
   const result = await callSignedBytePlusApi({
     action,
     version: ASSETS_VERSION,
     method: "POST",
     body: {
       GroupId: params.remoteGroupId,
-      ImageUrl: params.imageUrl,
-      Url: params.imageUrl,
-      // BytePlus 는 대문자 URL 키를 요구한다 (MissingParameter.URL 방지)
       URL: params.imageUrl,
-      ImageURL: params.imageUrl,
-      ...(params.assetType === "video" ? { VideoURL: params.imageUrl } : {}),
-
-
-      Label: params.label,
       Name: params.label,
-      AssetType: params.assetType ?? "image",
+      AssetType: remoteAssetType,
+      ProjectName: process.env["BYTEPLUS_ASSETS_PROJECT_NAME"] ?? "default",
     },
   });
   if (!result.ok) {

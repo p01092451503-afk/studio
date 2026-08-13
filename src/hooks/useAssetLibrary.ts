@@ -82,6 +82,7 @@ export function useIngestAsset() {
       groupId: string;
       storagePath: string;
       name: string;
+      assetType?: "image" | "video";
       characterId?: string | null;
     }) => fn({ data: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets"] }),
