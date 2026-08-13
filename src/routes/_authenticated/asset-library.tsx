@@ -565,25 +565,14 @@ function AssetLibraryPage() {
                       key={asset.id}
                       className="overflow-hidden rounded-lg border border-border bg-muted/30"
                     >
-                      {asset.storage_path ? (
-                        <SignedImage
-                          bucket="character-refs"
-                          path={asset.storage_path}
-                          alt={asset.name}
-                          className="aspect-video w-full object-cover"
-                        />
-                      ) : asset.thumbnail_url ? (
-                        <img
-                          src={asset.thumbnail_url}
-                          alt={asset.name}
-                          loading="lazy"
-                          className="aspect-video w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex aspect-video w-full items-center justify-center">
-                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
+                      <AssetPreview
+                        bucket="character-refs"
+                        storagePath={asset.storage_path}
+                        fallbackUrl={asset.thumbnail_url}
+                        assetType={asset.asset_type}
+                        alt={asset.name}
+                        className="aspect-video w-full bg-muted/50 object-cover"
+                      />
                       <div className="space-y-2 p-2.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="min-w-0 flex-1 truncate text-xs font-semibold">
