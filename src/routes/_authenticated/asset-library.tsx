@@ -572,7 +572,7 @@ function AssetLibraryPage() {
                         {t("assetlib.ingest_asset")}
                         <input
                           type="file"
-                          accept="image/*,video/*"
+                          accept="image/*,video/*,.mkv,.mov,.m4v,.avi,.webm"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
