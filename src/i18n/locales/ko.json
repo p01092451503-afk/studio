@@ -619,7 +619,7 @@
     "delete_group_confirm": "'{{name}}' 그룹과 그 안의 자산을 모두 삭제할까요? 되돌릴 수 없습니다.",
     "select_group_hint": "왼쪽에서 그룹을 선택하거나 새 그룹을 만드세요.",
     "remote_group_id_missing": "원격 GroupId 미발급",
-    "ingest_image": "이미지 입고",
+    "ingest_asset": "자산 입고",
     "verify_title": "실사 인물 인증",
     "verify_desc": "QR 링크를 배우 휴대폰으로 열어 활체 인증을 완료한 뒤 상태를 조회하세요. 인증 전 404 는 정상입니다.",
     "verify_start": "인증 세션 생성",

@@ -470,10 +470,10 @@ function AssetLibraryPage() {
                         ) : (
                           <Upload className="h-4 w-4" />
                         )}
-                        {t("assetlib.ingest_image")}
+                        {t("assetlib.ingest_asset")}
                         <input
                           type="file"
-                          accept="image/*,video/mp4"
+                          accept="image/*,video/*"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
