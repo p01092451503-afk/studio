@@ -89,9 +89,9 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     const refProbes: Array<{ url: string; status: number | null; contentType: string | null; contentLength: string | null; ok: boolean; error?: string }> = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-       const { assertPublicFetchUrl, getPublicFetchOrigin } = await import("@/lib/public-origin.server");
-      // 미리보기 도메인은 로그인 리다이렉트가 걸려 ARK 가 이미지를 못 받으므로 안정 공개 도메인을 쓴다.
-      const origin = await getPublicFetchOrigin();
+       const { assertPublicFetchUrl, getPublicFetchOrigin, resolveRedirectlessOrigin } = await import("@/lib/public-origin.server");
+      // 미리보기/리다이렉트 도메인은 ARK 가 이미지를 못 받으므로 최종 공개 도메인까지 따라간다.
+      const origin = await resolveRedirectlessOrigin(await getPublicFetchOrigin());
 
       // ARK 는 토큰 없는 공개 URL 만 안정적으로 fetch 하므로, 참고 미디어의 임시 사본을
       // 공개 엔드포인트(/api/public/seedance-ref/*)에서 서빙되는 키로 복사한다.
@@ -115,7 +115,7 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
       for (const u of publicUrls) {
          assertPublicFetchUrl(u);
         try {
-          const probe = await fetch(u, { redirect: "manual" });
+          const probe = await fetch(u, { redirect: "follow" });
           const ct = probe.headers.get("content-type") ?? "";
           const cl = probe.headers.get("content-length") ?? "";
           refProbes.push({ url: u, status: probe.status, contentType: ct || null, contentLength: cl || null, ok: probe.status === 200 && /^image\//i.test(ct) });
