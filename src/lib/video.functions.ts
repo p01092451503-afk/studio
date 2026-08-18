@@ -84,6 +84,7 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     if (insErr || !row) throw new Error(`DB_INSERT_VIDEO_FAILED: ${insErr?.message ?? ""}`);
     const videoId = row.id as string;
 
+    const taskIds: string[] = [];
     const refPublicKeys: string[] = [];
     // 참고 이미지 공개 URL 진단 결과(실패 원인 추적용).
     const refProbes: Array<{ url: string; status: number | null; contentType: string | null; contentLength: string | null; ok: boolean; error?: string }> = [];
