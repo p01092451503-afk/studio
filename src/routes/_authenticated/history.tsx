@@ -399,35 +399,35 @@ function HistoryPage() {
                       {new Date(r.created_at).toLocaleString(locale)}
                     </div>
                     <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <span className="shrink-0 font-semibold">Task ID</span>
-                      {r.task_id ? (
-                        <>
-                          <code className="min-w-0 flex-1 truncate">{r.task_id}</code>
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            className="shrink-0 rounded border px-1 py-0.5 hover:bg-muted"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(r.task_id ?? "");
-                              toast.success("Task ID 복사됨");
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                navigator.clipboard.writeText(r.task_id ?? "");
-                                toast.success("Task ID 복사됨");
-                              }
-                            }}
-                          >
-                            복사
-                          </span>
-                        </>
-                      ) : (
-                        <span className="italic">없음</span>
+                      <span className="shrink-0 font-semibold">
+                        {r.task_id ? "Task ID" : "생성 ID"}
+                      </span>
+                      <code className="min-w-0 flex-1 truncate">{r.task_id ?? r.id}</code>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="shrink-0 rounded border px-1 py-0.5 hover:bg-muted"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(r.task_id ?? r.id);
+                          toast.success("복사됨");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(r.task_id ?? r.id);
+                            toast.success("복사됨");
+                          }
+                        }}
+                      >
+                        복사
+                      </span>
+                      {!r.task_id && (
+                        <span className="shrink-0 italic">(Task 미발급)</span>
                       )}
                     </div>
+
                   </div>
 
                 </button>
