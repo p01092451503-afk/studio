@@ -151,7 +151,6 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
       const useFirstFrame = publicUrls.length === 1;
       const firstFrameUrl = useFirstFrame ? publicUrls[0] : null;
       const referenceImageUrls = useFirstFrame ? [] : publicUrls;
-      const taskIds: string[] = [];
       let startedModel = "";
       for (let index = 0; index < data.outputQuantity; index += 1) {
         const started = await createVideoTask({
