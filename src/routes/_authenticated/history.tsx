@@ -363,7 +363,7 @@ function HistoryPage() {
           items={list as VideoRow[]}
           getKey={(r) => r.id}
           columnsForWidth={(w) => (w < 640 ? 1 : w < 768 ? 2 : w < 1024 ? 3 : 4)}
-          estimateRowHeight={(cw) => cw * (9 / 16) + 96}
+          estimateRowHeight={(cw) => cw * (9 / 16) + 118}
           renderItem={(r) => {
             const first = r.results[0];
             return (
