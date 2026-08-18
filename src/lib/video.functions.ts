@@ -84,6 +84,7 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
     if (insErr || !row) throw new Error(`DB_INSERT_VIDEO_FAILED: ${insErr?.message ?? ""}`);
     const videoId = row.id as string;
 
+    const taskIds: string[] = [];
     const refPublicKeys: string[] = [];
     // 참고 이미지 공개 URL 진단 결과(실패 원인 추적용).
     const refProbes: Array<{ url: string; status: number | null; contentType: string | null; contentLength: string | null; ok: boolean; error?: string }> = [];
@@ -150,7 +151,6 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
       const useFirstFrame = publicUrls.length === 1;
       const firstFrameUrl = useFirstFrame ? publicUrls[0] : null;
       const referenceImageUrls = useFirstFrame ? [] : publicUrls;
-      const taskIds: string[] = [];
       let startedModel = "";
       for (let index = 0; index < data.outputQuantity; index += 1) {
         const started = await createVideoTask({
@@ -221,15 +221,23 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
         : "";
       const detailed = `${friendly}${probeLines}`;
 
-      console.error("[video-generation-failed]", { videoId, message, refProbes });
+      console.error("[video-generation-failed]", { videoId, message, refProbes, taskIds });
 
       await supabase
         .from("video_generations")
         .update({
           status: "error",
+          task_id: taskIds.length ? taskIds[0] : null,
           error_message: detailed.slice(0, 4000),
           completed_at: new Date().toISOString(),
-          options: { ...data.options, refPublicKeys, refProbes, failureRaw: message.slice(0, 1000) },
+          options: {
+            ...data.options,
+            refPublicKeys,
+            refProbes,
+            failureRaw: message.slice(0, 1000),
+            taskIds: taskIds.length ? taskIds : undefined,
+            outputQuantity: data.outputQuantity,
+          },
         })
         .eq("id", videoId);
       // 오류를 throw 하면 클라이언트가 흰 화면으로 죽으므로 결과로 반환한다.
