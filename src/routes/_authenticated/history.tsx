@@ -363,7 +363,7 @@ function HistoryPage() {
           items={list as VideoRow[]}
           getKey={(r) => r.id}
           columnsForWidth={(w) => (w < 640 ? 1 : w < 768 ? 2 : w < 1024 ? 3 : 4)}
-          estimateRowHeight={(cw) => cw * (9 / 16) + 96}
+          estimateRowHeight={(cw) => cw * (9 / 16) + 118}
           renderItem={(r) => {
             const first = r.results[0];
             return (
@@ -398,7 +398,38 @@ function HistoryPage() {
                     <div className="text-[11px] text-muted-foreground">
                       {new Date(r.created_at).toLocaleString(locale)}
                     </div>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <span className="shrink-0 font-semibold">Task ID</span>
+                      {r.task_id ? (
+                        <>
+                          <code className="min-w-0 flex-1 truncate">{r.task_id}</code>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            className="shrink-0 rounded border px-1 py-0.5 hover:bg-muted"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(r.task_id ?? "");
+                              toast.success("Task ID 복사됨");
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(r.task_id ?? "");
+                                toast.success("Task ID 복사됨");
+                              }
+                            }}
+                          >
+                            복사
+                          </span>
+                        </>
+                      ) : (
+                        <span className="italic">없음</span>
+                      )}
+                    </div>
                   </div>
+
                 </button>
                 <div className="absolute bottom-3 right-3">
                   <ConfirmDelete
