@@ -398,35 +398,48 @@ function HistoryPage() {
                     <div className="text-[11px] text-muted-foreground">
                       {new Date(r.created_at).toLocaleString(locale)}
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <span className="shrink-0 font-semibold">
-                        {r.task_id ? "Task ID" : "생성 ID"}
-                      </span>
-                      <code className="min-w-0 flex-1 truncate">{r.task_id ?? r.id}</code>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        className="shrink-0 rounded border px-1 py-0.5 hover:bg-muted"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(r.task_id ?? r.id);
-                          toast.success("복사됨");
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(r.task_id ?? r.id);
-                            toast.success("복사됨");
-                          }
-                        }}
-                      >
-                        복사
-                      </span>
-                      {!r.task_id && (
-                        <span className="shrink-0 italic">(Task 미발급)</span>
-                      )}
-                    </div>
+                    {(() => {
+                      const optIds = Array.isArray((r.options as any)?.taskIds)
+                        ? ((r.options as any).taskIds as unknown[]).filter(
+                            (v): v is string => typeof v === "string" && v.length > 0,
+                          )
+                        : [];
+                      const reqId =
+                        r.error_message?.match(/Request id:\s*([A-Za-z0-9-]+)/)?.[1] ?? null;
+                      const tid = r.task_id ?? optIds[0] ?? null;
+                      const val = tid ?? reqId ?? r.id;
+                      const lbl = tid ? "Task ID" : reqId ? "Request ID" : "생성 ID";
+                      const copy = () => {
+                        navigator.clipboard.writeText(val);
+                        toast.success("복사됨");
+                      };
+                      return (
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <span className="shrink-0 font-semibold">{lbl}</span>
+                          <code className="min-w-0 flex-1 truncate">{val}</code>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            className="shrink-0 rounded border px-1 py-0.5 hover:bg-muted"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copy();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                copy();
+                              }
+                            }}
+                          >
+                            복사
+                          </span>
+                          {!tid && <span className="shrink-0 italic">(Task 미발급)</span>}
+                        </div>
+                      );
+                    })()}
+
 
                   </div>
 
@@ -581,24 +594,49 @@ function VideoDetailCard({
           <Meta label={t("history.meta.seed")} value={row.seed?.toString() ?? "-"} />
         </div>
 
-        {row.task_id && (
-          <div className="rounded-xl border bg-muted/40 p-3">
-            <div className="text-[11px] font-semibold text-muted-foreground">Task ID (ARK)</div>
-            <div className="mt-1 flex items-center gap-2">
-              <code className="flex-1 break-all text-xs">{row.task_id}</code>
-              <button
-                type="button"
-                className="rounded-lg border px-2 py-1 text-[11px] font-medium hover:bg-background"
-                onClick={() => {
-                  navigator.clipboard.writeText(row.task_id ?? "");
-                  toast.success("Task ID 복사됨");
-                }}
-              >
-                복사
-              </button>
+        {(() => {
+          // 실패한 영상도 추적 ID를 볼 수 있도록: task_id → options.taskIds → 오류 메시지의 Request id → 생성 ID 순으로 표시한다.
+          const optionTaskIds = Array.isArray((row.options as any)?.taskIds)
+            ? ((row.options as any).taskIds as unknown[]).filter(
+                (v): v is string => typeof v === "string" && v.length > 0,
+              )
+            : [];
+          const requestId = row.error_message?.match(/Request id:\s*([A-Za-z0-9-]+)/)?.[1] ?? null;
+          const value = row.task_id ?? optionTaskIds[0] ?? requestId ?? row.id;
+          const label = row.task_id || optionTaskIds[0]
+            ? "Task ID (ARK)"
+            : requestId
+              ? "Request ID (ARK) · Task 미발급"
+              : "생성 ID (내부) · Task 미발급";
+          return (
+            <div className="rounded-xl border bg-muted/40 p-3">
+              <div className="text-[11px] font-semibold text-muted-foreground">{label}</div>
+              <div className="mt-1 flex items-center gap-2">
+                <code className="flex-1 break-all text-xs">{value}</code>
+                <button
+                  type="button"
+                  className="rounded-lg border px-2 py-1 text-[11px] font-medium hover:bg-background"
+                  onClick={() => {
+                    navigator.clipboard.writeText(value);
+                    toast.success("복사됨");
+                  }}
+                >
+                  복사
+                </button>
+              </div>
+              {optionTaskIds.length > 1 && (
+                <ul className="mt-2 space-y-1">
+                  {optionTaskIds.slice(1).map((tid) => (
+                    <li key={tid} className="break-all font-mono text-[11px] text-muted-foreground">
+                      {tid}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
+
 
         <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
           <Meta
