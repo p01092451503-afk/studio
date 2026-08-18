@@ -221,15 +221,23 @@ export const startVideoGeneration = createServerFn({ method: "POST" })
         : "";
       const detailed = `${friendly}${probeLines}`;
 
-      console.error("[video-generation-failed]", { videoId, message, refProbes });
+      console.error("[video-generation-failed]", { videoId, message, refProbes, taskIds });
 
       await supabase
         .from("video_generations")
         .update({
           status: "error",
+          task_id: taskIds.length ? taskIds[0] : null,
           error_message: detailed.slice(0, 4000),
           completed_at: new Date().toISOString(),
-          options: { ...data.options, refPublicKeys, refProbes, failureRaw: message.slice(0, 1000) },
+          options: {
+            ...data.options,
+            refPublicKeys,
+            refProbes,
+            failureRaw: message.slice(0, 1000),
+            taskIds: taskIds.length ? taskIds : undefined,
+            outputQuantity: data.outputQuantity,
+          },
         })
         .eq("id", videoId);
       // 오류를 throw 하면 클라이언트가 흰 화면으로 죽으므로 결과로 반환한다.
